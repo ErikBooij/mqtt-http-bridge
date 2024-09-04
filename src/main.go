@@ -13,9 +13,10 @@ import (
 	"os/signal"
 	"syscall"
 	"zigbee-coordinator/src/config"
+	"zigbee-coordinator/src/datastore"
 	"zigbee-coordinator/src/hook"
+	"zigbee-coordinator/src/processor"
 	"zigbee-coordinator/src/publisher"
-	"zigbee-coordinator/src/store"
 	"zigbee-coordinator/src/subscription"
 )
 
@@ -40,7 +41,9 @@ func main() {
 		return
 	}
 
-	store.AddSubscription(subscription.Subscription{
+	proc := processor.New(store, setUpPublisher(ctx, 10))
+
+	_, _ = store.AddSubscription(subscription.Subscription{
 		Topic: "zigbee2mqtt/shortcut-button-001",
 		Extract: map[string]string{
 			"action":  "action",
@@ -78,7 +81,7 @@ func main() {
 
 	server.Log = slog.New(slog.NewTextHandler(io.Discard, nil))
 
-	if err := attachHooks(ctx, server, store, cfg); err != nil {
+	if err := attachHooks(server, proc, cfg); err != nil {
 		log.Printf("Unable to attach hooks. Stopping.\n\n%s\n", err)
 		os.Exit(1)
 		return
@@ -108,7 +111,7 @@ func main() {
 	log.Println("MQTT forwarder stopped.")
 }
 
-func attachHooks(ctx context.Context, server *mqtt.Server, store store.Store, cfg config.Config) error {
+func attachHooks(server *mqtt.Server, processor processor.Processor, cfg config.Config) error {
 	authHook := hook.Authentication(cfg.OpenAuth)
 
 	if !cfg.OpenAuth {
@@ -121,7 +124,7 @@ func attachHooks(ctx context.Context, server *mqtt.Server, store store.Store, cf
 		return err
 	}
 
-	processorHook := hook.Processor(store, setUpPublisher(ctx, 10))
+	processorHook := hook.ProcessorHook(processor)
 
 	if err := server.AddHook(processorHook, nil); err != nil {
 		return err
@@ -156,10 +159,10 @@ func setUpPublisher(ctx context.Context, parallel int) publisher.Publisher {
 	})
 }
 
-func setUpStore(cfg config.Config) (store.Store, error) {
+func setUpStore(cfg config.Config) (datastore.Store, error) {
 	switch cfg.StorageDriver {
 	case "memory":
-		return store.Memory(), nil
+		return datastore.Memory(), nil
 	}
 
 	return nil, fmt.Errorf("unknown storage driver: %s", cfg.StorageDriver)
