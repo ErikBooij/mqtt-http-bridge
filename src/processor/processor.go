@@ -6,22 +6,22 @@ import (
 	"errors"
 	"github.com/blues/jsonata-go"
 	"log"
+	"mqtt-http-bridge/src/publisher"
+	"mqtt-http-bridge/src/subscription"
+	"mqtt-http-bridge/src/utilities"
 	"sync"
 	"text/template"
-	"zigbee-coordinator/src/datastore"
-	"zigbee-coordinator/src/publisher"
-	"zigbee-coordinator/src/subscription"
-	"zigbee-coordinator/src/utilities"
 )
 
 type Processor interface {
 	Process(topic string, user string, payload string)
 }
 
-func New(store datastore.Store, publisher publisher.Publisher) Processor {
+func New(store subscription.Service, publisher publisher.Publisher, logger *log.Logger) Processor {
 	return &processor{
+		logger:    logger,
 		publisher: publisher,
-		store:     store,
+		service:   store,
 
 		expressionCache: make(map[string]*jsonata.Expr),
 		templateCache:   make(map[string]*template.Template),
@@ -29,8 +29,9 @@ func New(store datastore.Store, publisher publisher.Publisher) Processor {
 }
 
 type processor struct {
+	logger    *log.Logger
 	publisher publisher.Publisher
-	store     datastore.Store
+	service   subscription.Service
 
 	expressionCache   map[string]*jsonata.Expr
 	expressionCacheMu sync.RWMutex
@@ -40,33 +41,42 @@ type processor struct {
 }
 
 func (p *processor) Process(topic string, user string, payload string) {
-	sub, err := p.store.GetSubscriptionForTopic(topic)
+	subs, err := p.service.GetSubscriptionsForTopic(topic)
 
 	switch {
-	case errors.Is(err, datastore.ErrorSubscriptionNotFound):
-		return
 	case err != nil:
-		log.Printf("Error getting subscription for topic %s: %s\n", topic, err)
+		p.logger.Printf("Error getting subscriptions for topic %s: %s\n", topic, err)
 		return
 	}
 
-	extractedParameters := p.extractParametersFromMessage(sub, payload)
-
-	parameters := map[string]any{
-		"topic":   topic,
-		"client":  user,
-		"payload": payload,
-		"custom":  extractedParameters,
-	}
-
-	if !p.filterMessage(sub, parameters) {
-		log.Printf("Message for subscription %s was filtered out (%s)\n", sub.ID, payload)
+	globalParams, err := p.service.GetGlobalParameters()
+	if err != nil {
+		p.logger.Printf("Error getting global parameters: %s\n", err)
 		return
 	}
 
-	requestBody := p.renderTemplate(sub, parameters, payload)
+	for _, sub := range subs {
+		go func() {
+			parameters := map[string]any{
+				"topic":   topic,
+				"client":  user,
+				"payload": payload,
+				"global":  globalParams,
+				"extract": p.extractParametersFromMessage(sub, payload),
+			}
 
-	p.publisher.Publish(requestBody, sub)
+			sub, err = p.service.ApplyPlaceholdersOnSubscription(sub, parameters)
+
+			if !p.filterMessage(sub, parameters) {
+				p.logger.Printf("Message for subscription %s was filtered out (%s)\n", sub.ID, payload)
+				return
+			}
+
+			requestBody := p.renderTemplate(sub, parameters, payload)
+
+			p.publisher.Publish(requestBody, sub)
+		}()
+	}
 }
 
 func (p *processor) cacheExpression(expression string) *jsonata.Expr {
@@ -87,7 +97,7 @@ func (p *processor) cacheExpression(expression string) *jsonata.Expr {
 	expr, err := jsonata.Compile(expression)
 
 	if err != nil {
-		log.Printf("Error compiling expression %s: %s\n", expression, err)
+		p.logger.Printf("Error compiling expression %s: %s\n", expression, err)
 	}
 
 	p.expressionCacheMu.Lock()
@@ -107,15 +117,15 @@ func (p *processor) extractParametersFromMessage(sub subscription.Subscription, 
 	var data interface{}
 
 	if err := json.Unmarshal([]byte(message), &data); err != nil {
-		log.Printf("Topic message for sub %s was not JSON: %s\n", sub.ID, err)
+		p.logger.Printf("Topic message for sub %s was not JSON: %s\n", sub.ID, err)
 		return values
 	}
 
 	for key, expression := range sub.Extract {
 		value, err := p.extractParameterFromData(data, expression)
 
-		if err != nil {
-			log.Printf("Error extracting value for key %s: %s\n", key, err)
+		if err != nil && !errors.Is(err, jsonata.ErrUndefined) {
+			p.logger.Printf("Error extracting value for key %s: %s\n", key, err)
 			continue
 		}
 
@@ -155,7 +165,7 @@ func (p *processor) filterMessage(sub subscription.Subscription, parameters map[
 	res, err := expr.Eval(parameters)
 
 	if err != nil {
-		log.Printf("Error evaluating filter expression for subscription %s: %s\n", sub.ID, err)
+		p.logger.Printf("Error evaluating filter expression for subscription %s: %s\n", sub.ID, err)
 		return true
 	}
 
@@ -168,17 +178,22 @@ func (p *processor) filterMessage(sub subscription.Subscription, parameters map[
 }
 
 func (p *processor) renderTemplate(sub subscription.Subscription, parameters map[string]any, message string) []byte {
-	cacheKey := utilities.MD5Hash(sub.Template)
+	cacheKey := utilities.MD5Hash(sub.BodyTemplate)
 
 	p.templateCacheMu.RLock()
 	tmpl, ok := p.templateCache[cacheKey]
 	p.templateCacheMu.RUnlock()
 
 	if !ok {
-		tmpl, err := template.New(cacheKey).Parse(sub.Template)
-
-		if err != nil {
+		if sub.BodyTemplate == "" {
 			tmpl = nil
+		} else {
+			var err error
+			tmpl, err = template.New(cacheKey).Parse(sub.BodyTemplate)
+
+			if err != nil {
+				tmpl = nil
+			}
 		}
 
 		p.templateCacheMu.Lock()
@@ -193,7 +208,7 @@ func (p *processor) renderTemplate(sub subscription.Subscription, parameters map
 	buf := new(bytes.Buffer)
 
 	if err := tmpl.Execute(buf, parameters); err != nil {
-		log.Printf("Error rendering template for subscription %s: %s\n", sub.ID, err)
+		p.logger.Printf("Error rendering template for subscription %s: %s\n", sub.ID, err)
 		return []byte(message)
 	}
 

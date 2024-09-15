@@ -3,7 +3,7 @@ package hook
 import (
 	mqtt "github.com/mochi-mqtt/server/v2"
 	"github.com/mochi-mqtt/server/v2/packets"
-	"zigbee-coordinator/src/processor"
+	"mqtt-http-bridge/src/processor"
 )
 
 func ProcessorHook(processor processor.Processor) mqtt.Hook {

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"log"
+	"mqtt-http-bridge/src/subscription"
 	"net/http"
-	"zigbee-coordinator/src/subscription"
 )
 
 type Publisher interface {
@@ -13,7 +13,8 @@ type Publisher interface {
 }
 
 type publisher struct {
-	jobs chan publisherJob
+	jobs   chan publisherJob
+	logger *log.Logger
 }
 
 type publisherJob struct {
@@ -21,9 +22,10 @@ type publisherJob struct {
 	subscription subscription.Subscription
 }
 
-func New(ctx context.Context, parallel int, clientFactory func() *http.Client) *publisher {
+func New(ctx context.Context, parallel int, clientFactory func() *http.Client, logger *log.Logger) *publisher {
 	p := &publisher{
-		jobs: make(chan publisherJob, 100),
+		jobs:   make(chan publisherJob, 100),
+		logger: logger,
 	}
 
 	for range parallel {
@@ -56,7 +58,7 @@ func (p *publisher) start(ctx context.Context, client *http.Client) {
 func (p *publisher) doPublish(job publisherJob, client *http.Client) {
 	req, err := http.NewRequest(job.subscription.Method, job.subscription.URL, bytes.NewReader(job.body))
 	if err != nil {
-		log.Printf("Error creating request for subscription %s: %s\n", job.subscription.ID, err)
+		p.logger.Printf("Error creating request for subscription %s: %s\n", job.subscription.ID, err)
 		return
 	}
 
@@ -64,9 +66,12 @@ func (p *publisher) doPublish(job publisherJob, client *http.Client) {
 		req.Header.Add(k, v)
 	}
 
+	req.Header.Add("Subscription-ID", job.subscription.ID)
+	req.Header.Add("Subscription-Name", job.subscription.Name)
+
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("Error publishing message to subscription %s: %s\n", job.subscription.ID, err)
+		p.logger.Printf("Error publishing message to subscription %s: %s\n", job.subscription.ID, err)
 		return
 	}
 

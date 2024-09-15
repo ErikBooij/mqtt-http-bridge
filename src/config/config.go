@@ -7,12 +7,21 @@ import (
 )
 
 type Config struct {
+	// Meta
+	AppEnv      string `envconfig:"APP_ENV" default:"production"`
+	PrepareData bool   `envconfig:"PREPARE_DATA" default:"false"`
+	Silent      bool   `envconfig:"SILENT" default:"false"`
+
+	// Broker
+	BrokerAddress string `envconfig:"BROKER_BIND" default:"127.0.0.1"`
+	BrokerPort    int    `envconfig:"BROKER_PORT" default:"1883"`
+
 	// Server
-	BindAddress string `envconfig:"BIND" default:"127.0.0.1"`
-	BindPort    int    `envconfig:"PORT" default:"1883"`
+	ServerAddress string `envconfig:"SERVER_BIND" default:"127.0.0.1"`
+	ServerPort    int    `envconfig:"SERVER_PORT" default:"8080"`
 
 	// Auth
-	OpenAuth bool   `envconfig:"OPEN_AUTH" default:"false"`
+	OpenAuth bool   `envconfig:"OPEN_AUTH" default:"true"`
 	Users    string `envconfig:"USERS" default:""`
 
 	// Store

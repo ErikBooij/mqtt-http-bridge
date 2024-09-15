@@ -1,19 +1,11 @@
 package utilities
 
 import (
-	"math/rand"
-)
-
-const (
-	charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	"github.com/google/uuid"
 )
 
 func GenerateRandomID() string {
-	id := make([]byte, 12)
+	id := uuid.New()
 
-	for i := 0; i < len(id); i++ {
-		id[i] = charset[rand.Intn(len(charset))]
-	}
-
-	return string(id)
+	return id.String()
 }
