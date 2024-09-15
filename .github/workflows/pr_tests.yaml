@@ -22,5 +22,8 @@ jobs:
       - name: Install dependencies
         run: go mod tidy
 
+      - name: Go Vet
+        run: go vet ./...
+
       - name: Run tests
         run: go test ./...
