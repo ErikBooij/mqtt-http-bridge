@@ -22,6 +22,9 @@ jobs:
       - name: Install dependencies
         run: go mod tidy
 
+      - name: Go Format
+        run: gofmt -d -e .
+
       - name: Go Vet
         run: go vet ./...
 
