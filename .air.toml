@@ -5,15 +5,16 @@
 cmd = "go build -o ./tmp/main src/main.go"
 bin = "./tmp/main"
 full_bin = "APP_ENV=dev STORAGE_DRIVER=file ./tmp/main"
-include_ext = ["go", "tpl", "tmpl", "html"]
+include_ext = ["go", "tpl", "tmpl", "html", "js", "css", "gohtml"]
 
 include_dir = ["src"]
-exclude_dir = ["vendor", "tmp", "node_modules"]
+exclude_dir = ["vendor", "tmp", "node_modules", "src/frontend/css", "src/frontend/js"] # The FE folders are excluded, because changes will trigger a rebuild, and the destination dir for that is watched.
 exclude_file = []
 exclude_ext = ["swp", "tmp"]
 exclude_regex = []
 interval = 500
 delay = 0
+clear_on_rebuild = true
 kill_signal = "SIGTERM"
 send_signal = true
 restart = true

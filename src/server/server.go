@@ -21,6 +21,9 @@ func New(service subscription.Service) HTTPServer {
 	logger.SetOutput(io.Discard)
 	server.Logger = logger
 
+	server.GET("/", page("home.gohtml"))
+	server.GET("/assets/*", assets())
+
 	api := server.Group("/api/v1")
 
 	api.GET("/health", func(c echo.Context) error {
