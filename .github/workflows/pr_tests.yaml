@@ -4,9 +4,10 @@ on:
   pull_request:
     branches:
       - 'main'
+  workflow_dispatch: {}
 
 jobs:
-  test:
+  Test:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,5 +22,16 @@ jobs:
       - name: Install dependencies
         run: go mod tidy
 
+      - name: Go Format
+        run: gofmt -d -e .
+
+      - name: Go Vet
+        run: go vet ./...
+
       - name: Run tests
         run: go test ./...
+
+      - name: Staticcheck
+        uses: dominikh/staticcheck-action@v1
+        with:
+          version: "latest"

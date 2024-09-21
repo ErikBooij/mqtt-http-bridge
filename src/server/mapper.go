@@ -62,15 +62,3 @@ func subscriptionTemplateToResponse(sub subscription.SubscriptionTemplate) any {
 		RequiredParameters: sub.RequiredParameters,
 	}
 }
-
-func orIfNil(value any, y any) any {
-	if value == nil {
-		return y
-	}
-
-	if _, ok := value.(map[string]string); ok && len(value.(map[string]string)) == 0 {
-		return y
-	}
-
-	return value
-}

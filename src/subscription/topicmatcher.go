@@ -49,13 +49,6 @@ func (tm *topicMatcher) match(topic, subscription string) bool {
 	return regex.MatchString(topic)
 }
 
-func (tm *topicMatcher) reset() {
-	tm.topicRegexesMu.Lock()
-	defer tm.topicRegexesMu.Unlock()
-
-	tm.topicRegexes = make(map[string]*regexp.Regexp)
-}
-
 func hasWildcard(subscription string) bool {
 	if strings.Contains(subscription, "+") {
 		return true

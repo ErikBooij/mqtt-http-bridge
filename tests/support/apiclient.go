@@ -36,7 +36,6 @@ func NewAPIClient(t *testing.T, host string) APIClient {
 }
 
 type apiClient struct {
-	host   string
 	client *testHTTPClient
 
 	t *testing.T
