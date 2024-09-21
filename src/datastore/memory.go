@@ -84,10 +84,6 @@ func (s *memoryStore) DeleteSubscription(id string) error {
 }
 
 func (s *memoryStore) AddSubscriptionTemplate(subTemp SubscriptionTemplateRecord) (SubscriptionTemplateRecord, error) {
-	if err := s.ensureNoSubscriptionTemplateConflict(subTemp, true); err != nil {
-		return SubscriptionTemplateRecord{}, err
-	}
-
 	s.subscriptionTemplatesMu.Lock()
 	defer s.subscriptionTemplatesMu.Unlock()
 
@@ -177,45 +173,5 @@ func (s *memoryStore) DeleteGlobalParameter(key string) error {
 	defer s.globalParametersMu.Unlock()
 
 	delete(s.globalParameters, key)
-	return nil
-}
-
-func (s *memoryStore) ensureNoSubscriptionConflict(sub SubscriptionRecord, isNew bool) error {
-	subs, err := s.GetSubscriptions()
-
-	if err != nil {
-		return err
-	}
-
-	for _, existingSub := range subs {
-		if !isNew && existingSub.ID == sub.ID {
-			continue
-		}
-
-		if existingSub.ID == sub.ID {
-			return ErrSubscriptionIDConflicts
-		}
-	}
-
-	return nil
-}
-
-func (s *memoryStore) ensureNoSubscriptionTemplateConflict(sub SubscriptionTemplateRecord, isNew bool) error {
-	subs, err := s.GetSubscriptionTemplates()
-
-	if err != nil {
-		return err
-	}
-
-	for _, existingSubTemp := range subs {
-		if !isNew && existingSubTemp.ID == sub.ID {
-			continue
-		}
-
-		if existingSubTemp.ID == sub.ID {
-			return ErrSubscriptionTemplateIDConflicts
-		}
-	}
-
 	return nil
 }

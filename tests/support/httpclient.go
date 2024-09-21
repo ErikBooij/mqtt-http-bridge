@@ -60,6 +60,7 @@ func bodyJson(body any) requestOption {
 	}
 }
 
+//lint:ignore U1000 // Keeping this around as a convenience for future tests
 func bodyText(body string) requestOption {
 	return func(t *testing.T, o *requestOptions) {
 		o.body = []byte(body)

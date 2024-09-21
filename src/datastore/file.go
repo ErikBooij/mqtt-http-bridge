@@ -114,10 +114,6 @@ func (s *fileStore) DeleteSubscription(id string) error {
 func (s *fileStore) AddSubscriptionTemplate(subTemp SubscriptionTemplateRecord) (SubscriptionTemplateRecord, error) {
 	defer s.storage.flush()
 
-	if err := s.ensureNoSubscriptionTemplateConflict(subTemp, true); err != nil {
-		return SubscriptionTemplateRecord{}, err
-	}
-
 	s.storage.subscriptionTemplatesMu.Lock()
 	defer s.storage.subscriptionTemplatesMu.Unlock()
 
@@ -214,46 +210,6 @@ func (s *fileStore) DeleteGlobalParameter(key string) error {
 	defer s.storage.globalParametersMu.Unlock()
 
 	delete(s.storage.GlobalParameters, key)
-	return nil
-}
-
-func (s *fileStore) ensureNoSubscriptionConflict(sub SubscriptionRecord, isNew bool) error {
-	subs, err := s.GetSubscriptions()
-
-	if err != nil {
-		return err
-	}
-
-	for _, existingSub := range subs {
-		if !isNew && existingSub.ID == sub.ID {
-			continue
-		}
-
-		if existingSub.ID == sub.ID {
-			return ErrSubscriptionIDConflicts
-		}
-	}
-
-	return nil
-}
-
-func (s *fileStore) ensureNoSubscriptionTemplateConflict(sub SubscriptionTemplateRecord, isNew bool) error {
-	subs, err := s.GetSubscriptionTemplates()
-
-	if err != nil {
-		return err
-	}
-
-	for _, existingSubTemp := range subs {
-		if !isNew && existingSubTemp.ID == sub.ID {
-			continue
-		}
-
-		if existingSubTemp.ID == sub.ID {
-			return ErrSubscriptionTemplateIDConflicts
-		}
-	}
-
 	return nil
 }
 

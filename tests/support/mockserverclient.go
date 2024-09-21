@@ -2,7 +2,6 @@ package testsupport
 
 import (
 	"fmt"
-	mockserver "github.com/BraspagDevelopers/mock-server-client"
 	"net/http"
 	"testing"
 )
@@ -82,10 +81,6 @@ func (c *mockServerClient) AssertRequestRecorded(method, path string, assertions
 
 func (c *mockServerClient) Reset() {
 	c.t.Fatalf("Reset not implemented")
-}
-
-func (c *mockServerClient) verify(matcher mockserver.RequestMatcher, times mockserver.Times) error {
-	return nil
 }
 
 type RecordedRequest struct {
