@@ -165,7 +165,7 @@ type UpdateSubscriptionOptions struct {
 	HTTPMethod       string            `json:"method"`
 	HTTPURL          string            `json:"path"`
 	HTTPHeaders      map[string]string `json:"headers"`
-	HTTPBodyTemplate string            `json:"bodyTemplate"`
+	HTTPBodyTemplate string            `json:"body"`
 }
 
 type SubscriptionTemplateResponse struct {
@@ -204,7 +204,7 @@ type AddSubscriptionTemplateOptions struct {
 	HTTPMethod       string            `json:"method"`
 	HTTPURL          string            `json:"url"`
 	HTTPHeaders      map[string]string `json:"headers"`
-	HTTPBodyTemplate string            `json:"bodyTemplate"`
+	HTTPBodyTemplate string            `json:"body"`
 
 	RequiredParameters []string `json:"requiredParameters"`
 }
@@ -220,7 +220,7 @@ type UpdateSubscriptionTemplateOptions struct {
 	HTTPMethod       string            `json:"method"`
 	HTTPURL          string            `json:"path"`
 	HTTPHeaders      map[string]string `json:"headers"`
-	HTTPBodyTemplate string            `json:"bodyTemplate"`
+	HTTPBodyTemplate string            `json:"body"`
 
 	RequiredParameters []string `json:"requiredParameters"`
 }

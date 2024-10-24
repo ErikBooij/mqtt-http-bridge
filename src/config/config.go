@@ -2,7 +2,12 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/mitchellh/mapstructure"
+	"gopkg.in/yaml.v3"
+	"os"
+	"slices"
 	"strings"
 )
 
@@ -10,25 +15,53 @@ type Config struct {
 	// Meta
 	AppEnv      string `envconfig:"APP_ENV" default:"production"`
 	PrepareData bool   `envconfig:"PREPARE_DATA" default:"false"`
-	Silent      bool   `envconfig:"SILENT" default:"false"`
 
-	// Broker
-	BrokerAddress string `envconfig:"BROKER_BIND" default:"127.0.0.1"`
-	BrokerPort    int    `envconfig:"BROKER_PORT" default:"1883"`
+	Broker          BrokerConfig                    `yaml:"broker"`
+	ExternalBrokers map[string]ExternalBrokerConfig `yaml:"brokers"`
+	Server          ServerConfig                    `yaml:"server"`
+	Storage         StorageConfig                   `yaml:"storage"`
 
-	// Server
-	ServerAddress string `envconfig:"SERVER_BIND" default:"127.0.0.1"`
-	ServerPort    int    `envconfig:"SERVER_PORT" default:"8080"`
+	// Internal Options
+	Silent bool
+}
 
-	// Auth
-	OpenAuth bool   `envconfig:"OPEN_AUTH" default:"true"`
-	Users    string `envconfig:"USERS" default:""`
+type BrokerConfig struct {
+	Address  string       `yaml:"bind-address" default:"0.0.0.0"`
+	Port     int          `yaml:"port" default:"1883"`
+	OpenAuth bool         `yaml:"open-auth" default:"false"`
+	Users    []BrokerUser `yaml:"users" default:""`
+}
 
-	// Store
-	StorageDriver string `envconfig:"STORAGE_DRIVER" default:"memory"`
+type BrokerUser struct {
+	Username string
+	Password string
+}
 
-	// Parsed
-	UsersParsed []ParsedUser
+type ExternalBrokerConfig struct {
+	Name     string `yaml:"name"`
+	Host     string `yaml:"host"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+}
+
+type ServerConfig struct {
+	Address string `yaml:"bind-address" default:"0.0.0.0"`
+	Port    int    `yaml:"port" default:"8080"`
+}
+
+var supportedStorageDrivers = []string{"memory", "file"}
+
+type StorageConfig struct {
+	Driver  string                 `yaml:"driver"`
+	Options map[string]interface{} `yaml:"options"`
+}
+
+type StorageConfigFile struct {
+	File string `yaml:"file"`
+}
+
+func (c *Config) IsDevelopment() bool {
+	return c.AppEnv == "dev"
 }
 
 type ParsedUser struct {
@@ -36,30 +69,64 @@ type ParsedUser struct {
 	Password string
 }
 
-func Load() (Config, error) {
+func Load() (*Config, error) {
 	var cfg Config
 
-	if err := envconfig.Process("", &cfg); err != nil {
-		return cfg, err
+	confFile := "mqtt-http.conf.yaml"
+
+	if f := os.Getenv("CONFIG_FILE"); f != "" {
+		confFile = f
 	}
 
-	if !cfg.OpenAuth {
-		for _, user := range strings.Split(cfg.Users, ",") {
-			parts := strings.Split(user, ":")
-			if len(parts) != 2 {
-				return cfg, errors.New("invalid user format")
+	fileContents, err := os.ReadFile(confFile)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := yaml.Unmarshal(fileContents, &cfg); err != nil {
+		return nil, err
+	}
+
+	if err := envconfig.Process("", &cfg); err != nil {
+		return nil, err
+	}
+
+	if !cfg.Broker.OpenAuth {
+		for idx, user := range cfg.Broker.Users {
+			username := strings.TrimSpace(user.Username)
+			password := strings.TrimSpace(user.Password)
+
+			if username == "" || password == "" {
+				return nil, fmt.Errorf("invalid user configured for built-in broker at index #%d", idx)
 			}
 
-			cfg.UsersParsed = append(cfg.UsersParsed, ParsedUser{
-				Username: strings.TrimSpace(parts[0]),
-				Password: strings.TrimSpace(parts[1]),
-			})
+			cfg.Broker.Users[idx].Username = username
+			cfg.Broker.Users[idx].Password = password
 		}
 
-		if len(cfg.UsersParsed) == 0 {
-			return cfg, errors.New("no users defined")
+		if len(cfg.Broker.Users) == 0 {
+			return nil, errors.New("no users defined")
 		}
 	}
 
-	return cfg, nil
+	if !slices.Contains(supportedStorageDrivers, cfg.Storage.Driver) {
+		return nil, fmt.Errorf("invalid storage driver: %s (should be one of %s)", cfg.Storage.Driver, strings.Join(supportedStorageDrivers, "/"))
+	}
+
+	return &cfg, nil
+}
+
+func (c *Config) StorageConfigFile() (StorageConfigFile, error) {
+	if c.Storage.Driver != "file" {
+		return StorageConfigFile{}, errors.New("storage driver is not 'file'")
+	}
+
+	var scf StorageConfigFile
+
+	if err := mapstructure.Decode(c.Storage.Options, &scf); err != nil {
+		return StorageConfigFile{}, fmt.Errorf("unable to decode storage options: %w", err)
+	}
+
+	return scf, nil
 }

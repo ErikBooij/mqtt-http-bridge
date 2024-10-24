@@ -1,6 +1,8 @@
 {
   "private": "true",
   "devDependencies": {
-    "tailwindcss": "^3.4.12"
+    "@tailwindcss/forms": "^0.5.9",
+    "tailwindcss": "^3.4.12",
+    "zod": "^3.23.8"
   }
 }

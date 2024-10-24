@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/blues/jsonata-go"
 	"log"
 	"mqtt-http-bridge/src/publisher"
@@ -58,17 +59,24 @@ func (p *processor) Process(topic string, user string, payload string) {
 	for _, sub := range subs {
 		go func() {
 			parameters := map[string]any{
-				"topic":   topic,
-				"client":  user,
-				"payload": payload,
+				"meta": map[string]any{
+					"topic":   topic,
+					"client":  user,
+					"payload": payload,
+				},
 				"global":  globalParams,
 				"extract": p.extractParametersFromMessage(sub, payload),
 			}
 
 			sub, err = p.service.ApplyPlaceholdersOnSubscription(sub, parameters)
 
+			if err != nil {
+				p.logger.Printf("Error applying placeholders to subscription %s: %s\n", sub.ID, err)
+				return
+			}
+
 			if !p.filterMessage(sub, parameters) {
-				p.logger.Printf("Message for subscription %s was filtered out (%s)\n", sub.ID, payload)
+				p.logger.Printf("Message for subscription %s was filtered out\n", sub.ID)
 				return
 			}
 
@@ -79,7 +87,7 @@ func (p *processor) Process(topic string, user string, payload string) {
 	}
 }
 
-func (p *processor) cacheExpression(expression string) *jsonata.Expr {
+func (p *processor) cacheExpression(expression string, context string) *jsonata.Expr {
 	if p.expressionCache == nil {
 		p.expressionCache = make(map[string]*jsonata.Expr)
 	}
@@ -97,7 +105,7 @@ func (p *processor) cacheExpression(expression string) *jsonata.Expr {
 	expr, err := jsonata.Compile(expression)
 
 	if err != nil {
-		p.logger.Printf("Error compiling expression %s: %s\n", expression, err)
+		p.logger.Printf("Error compiling expression `%s` in context %s: %s\n", expression, context, err)
 	}
 
 	p.expressionCacheMu.Lock()
@@ -122,7 +130,7 @@ func (p *processor) extractParametersFromMessage(sub subscription.Subscription, 
 	}
 
 	for key, expression := range sub.Extract {
-		value, err := p.extractParameterFromData(data, expression)
+		value, err := p.extractParameterFromData(data, expression, fmt.Sprintf("parameter[%s]", key))
 
 		if err != nil && !errors.Is(err, jsonata.ErrUndefined) {
 			p.logger.Printf("Error extracting value for key %s: %s\n", key, err)
@@ -135,8 +143,8 @@ func (p *processor) extractParametersFromMessage(sub subscription.Subscription, 
 	return values
 }
 
-func (p *processor) extractParameterFromData(data interface{}, expression string) (any, error) {
-	expr := p.cacheExpression(expression)
+func (p *processor) extractParameterFromData(data interface{}, expression string, context string) (any, error) {
+	expr := p.cacheExpression(expression, context)
 
 	if expr == nil {
 		return nil, errors.New("expression invalid")
@@ -156,7 +164,7 @@ func (p *processor) filterMessage(sub subscription.Subscription, parameters map[
 		return true
 	}
 
-	expr := p.cacheExpression(sub.Filter)
+	expr := p.cacheExpression(sub.Filter, "filter")
 
 	if expr == nil {
 		return true

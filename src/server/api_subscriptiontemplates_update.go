@@ -19,7 +19,7 @@ type updateSubscriptionTemplateRequest struct {
 	Method       string            `json:"method" validate:"required,oneof=GET POST PUT PATCH DELETE"`
 	URL          string            `json:"url" validate:"required"`
 	Headers      map[string]string `json:"headers"`
-	BodyTemplate string            `json:"bodyTemplate"`
+	BodyTemplate string            `json:"body"`
 
 	RequiredParameters []string `json:"requiredParameters" validate:"required"`
 }

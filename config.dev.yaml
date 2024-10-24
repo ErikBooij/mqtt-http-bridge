@@ -1,0 +1,23 @@
+storage:
+  driver: 'file' # file/memory (at some point mysql)
+  options:
+    file: 'storage.json'
+
+http:
+  bind-address: '0.0.0.0'
+  port: 8080
+
+broker:
+  bind-address: '0.0.0.0'
+  port: 1883
+  open-auth: false
+  users:
+    - username: 'test'
+      password: 'test'
+
+external-brokers:
+  smarthome-mqtt:
+    name: 'Smarthome MQTT'
+    host: '192.168.2.2:1883'
+    username: 'test'
+    password: 'test'

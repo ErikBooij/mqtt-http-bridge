@@ -4,6 +4,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 	"io"
+	"mqtt-http-bridge/src/config"
 	"mqtt-http-bridge/src/subscription"
 	"net/http"
 )
@@ -12,7 +13,9 @@ type HTTPServer interface {
 	Start(address string) error
 }
 
-func New(service subscription.Service) HTTPServer {
+func New(service subscription.Service, cfg *config.Config) HTTPServer {
+	tplRenderer := newTemplateRenderer(cfg)
+
 	server := echo.New()
 	server.Binder = newBinder()
 	server.Validator = newValidator()
@@ -21,8 +24,17 @@ func New(service subscription.Service) HTTPServer {
 	logger.SetOutput(io.Discard)
 	server.Logger = logger
 
-	server.GET("/", page("home.gohtml"))
-	server.GET("/assets/*", assets())
+	server.GET("/assets/*", assets(cfg))
+
+	server.GET("/", redirect("/subscriptions"))
+
+	server.GET("/subscriptions", subscriptions(tplRenderer))
+	server.GET("/subscriptions/:id", subscriptionUpdate(tplRenderer, service))
+	server.GET("/subscriptions/create", subscriptionCreate(tplRenderer))
+
+	server.GET("/global-parameters", globalParameters(tplRenderer))
+	server.GET("/global-parameters/:key", globalParameterUpdate(tplRenderer, service))
+	server.GET("/global-parameters/create", globalParameterCreate(tplRenderer))
 
 	api := server.Group("/api/v1")
 
