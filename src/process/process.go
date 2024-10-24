@@ -23,7 +23,7 @@ import (
 	"time"
 )
 
-func Start(ctx context.Context, cfg config.Config, appStartErr chan error) {
+func Start(ctx context.Context, cfg *config.Config, appStartErr chan error) {
 	defer close(appStartErr)
 
 	if ctx == nil {
@@ -47,7 +47,7 @@ func Start(ctx context.Context, cfg config.Config, appStartErr chan error) {
 
 	service := subscription.NewService(store)
 
-	if cfg.AppEnv == "dev" && cfg.PrepareData {
+	if cfg.IsDevelopment() && cfg.PrepareData {
 		logger.Println("Development mode detected, preparing data store.")
 
 		if err := dev.PopulateDataStore(service, logger); err != nil {
@@ -94,7 +94,7 @@ func Start(ctx context.Context, cfg config.Config, appStartErr chan error) {
 		return
 	}
 
-	httpServer := setUpServer(service)
+	httpServer := setUpServer(service, cfg)
 
 	go func() {
 		err := broker.Serve()
@@ -105,7 +105,7 @@ func Start(ctx context.Context, cfg config.Config, appStartErr chan error) {
 	}()
 
 	go func() {
-		err := httpServer.Start(fmt.Sprintf("%s:%d", cfg.ServerAddress, cfg.ServerPort))
+		err := httpServer.Start(fmt.Sprintf("%s:%d", cfg.Server.Address, cfg.Server.Port))
 		if err != nil {
 			appStartErr <- fmt.Errorf("unable to start httpServer: %w", err)
 			return
@@ -119,11 +119,11 @@ func Start(ctx context.Context, cfg config.Config, appStartErr chan error) {
 	logger.Println("Shutting down MQTT forwarder...")
 }
 
-func attachHooks(server *mqtt.Server, processor processor.Processor, cfg config.Config) error {
-	authHook := hook.Authentication(cfg.OpenAuth)
+func attachHooks(server *mqtt.Server, processor processor.Processor, cfg *config.Config) error {
+	authHook := hook.Authentication(cfg.Broker.OpenAuth)
 
-	if !cfg.OpenAuth {
-		for _, user := range cfg.UsersParsed {
+	if !cfg.Broker.OpenAuth {
+		for _, user := range cfg.Broker.Users {
 			authHook.AddUser(user.Username, user.Password)
 		}
 	}
@@ -141,8 +141,8 @@ func attachHooks(server *mqtt.Server, processor processor.Processor, cfg config.
 	return nil
 }
 
-func attachListeners(server *mqtt.Server, cfg config.Config) error {
-	tcp := listeners.NewTCP(listeners.Config{ID: "t1", Address: fmt.Sprintf("%s:%d", cfg.BrokerAddress, cfg.BrokerPort)})
+func attachListeners(server *mqtt.Server, cfg *config.Config) error {
+	tcp := listeners.NewTCP(listeners.Config{ID: "t1", Address: fmt.Sprintf("%s:%d", cfg.Broker.Address, cfg.Broker.Port)})
 
 	if err := server.AddListener(tcp); err != nil {
 		return err
@@ -151,16 +151,16 @@ func attachListeners(server *mqtt.Server, cfg config.Config) error {
 	return nil
 }
 
-func logStartWithConfig(cfg config.Config, logger *log.Logger) {
+func logStartWithConfig(cfg *config.Config, logger *log.Logger) {
 	a := "without authentication"
 
-	if !cfg.OpenAuth {
-		a = fmt.Sprintf("with %d configured users", len(cfg.UsersParsed))
+	if !cfg.Broker.OpenAuth {
+		a = fmt.Sprintf("with %d configured users", len(cfg.Broker.Users))
 	}
 
-	logger.Printf("Starting MQTT broker on %s:%d %s\n", cfg.BrokerAddress, cfg.BrokerPort, a)
-	logger.Printf("Starting HTTP server on %s:%d\n", cfg.ServerAddress, cfg.ServerPort)
-	logger.Printf("Using %s storage driver\n", cfg.StorageDriver)
+	logger.Printf("Starting MQTT broker on %s:%d %s\n", cfg.Broker.Address, cfg.Broker.Port, a)
+	logger.Printf("Starting HTTP server on %s:%d\n", cfg.Server.Address, cfg.Server.Port)
+	logger.Printf("Using %s storage driver\n", cfg.Storage.Driver)
 }
 
 func setUpPublisher(ctx context.Context, parallel int, logger *log.Logger) publisher.Publisher {
@@ -169,23 +169,23 @@ func setUpPublisher(ctx context.Context, parallel int, logger *log.Logger) publi
 	}, logger)
 }
 
-func setUpServer(service subscription.Service) server.HTTPServer {
-	return server.New(service)
+func setUpServer(service subscription.Service, cfg *config.Config) server.HTTPServer {
+	return server.New(service, cfg)
 }
 
-func setUpStore(cfg config.Config) (datastore.Store, error) {
-	switch cfg.StorageDriver {
+func setUpStore(cfg *config.Config) (datastore.Store, error) {
+	switch cfg.Storage.Driver {
 	case "memory":
 		return datastore.Memory()
 	case "file":
-		storageConfig, err := config.LoadFileStorageConfig()
+		storageConfig, err := cfg.StorageConfigFile()
 
 		if err != nil {
 			return nil, err
 		}
 
-		return datastore.File(storageConfig.Filename, 5*time.Second)
+		return datastore.File(storageConfig.File, 5*time.Second)
 	}
 
-	return nil, fmt.Errorf("unknown storage driver: %s", cfg.StorageDriver)
+	return nil, fmt.Errorf("unknown storage driver: %s", cfg.Storage.Driver)
 }

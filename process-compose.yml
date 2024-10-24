@@ -1,0 +1,29 @@
+version: 0.5
+is_strict: true
+
+# process-compose up -n dev
+
+processes:
+  # Development workflow
+  dev-watch-backend:
+    command: make watch-backend
+    namespace: dev
+    depends_on:
+      dev-watch-css:
+        condition: process-started
+      dev-watch-javascript:
+        condition: process-started
+    availability:
+      restart: on_failure
+
+  dev-watch-css:
+    command: make watch-css
+    namespace: dev
+    availability:
+      restart: on_failure
+
+  dev-watch-javascript:
+    command: make watch-js
+    namespace: dev
+    availability:
+      restart: on_failure

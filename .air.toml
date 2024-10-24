@@ -4,11 +4,11 @@
 [build]
 cmd = "go build -o ./tmp/main src/main.go"
 bin = "./tmp/main"
-full_bin = "APP_ENV=dev STORAGE_DRIVER=file ./tmp/main"
+full_bin = "CONFIG_FILE=config.dev.yaml APP_ENV=dev ./tmp/main"
 include_ext = ["go", "tpl", "tmpl", "html", "js", "css", "gohtml"]
 
 include_dir = ["src"]
-exclude_dir = ["vendor", "tmp", "node_modules", "src/frontend/css", "src/frontend/js"] # The FE folders are excluded, because changes will trigger a rebuild, and the destination dir for that is watched.
+exclude_dir = ["vendor", "tmp", "node_modules", "src/frontend/css", "src/frontend/js", "src/frontend/dist", "src/frontend/templates"] # The FE folders are excluded, because changes will trigger a rebuild, and the destination dir for that is watched.
 exclude_file = []
 exclude_ext = ["swp", "tmp"]
 exclude_regex = []
