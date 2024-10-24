@@ -13,7 +13,7 @@ type subscriptionResponse struct {
 	Method             string            `json:"method"`
 	URL                string            `json:"url"`
 	Headers            map[string]string `json:"headers,omitempty"`
-	BodyTemplate       string            `json:"bodyTemplate,omitempty"`
+	BodyTemplate       string            `json:"body,omitempty"`
 	TemplateID         *string           `json:"templateId,omitempty"`
 	TemplateParameters map[string]any    `json:"templateParameters,omitempty"`
 }
@@ -44,7 +44,7 @@ type subscriptionTemplateResponse struct {
 	Method             string            `json:"method"`
 	URL                string            `json:"url"`
 	Headers            map[string]string `json:"headers,omitempty"`
-	BodyTemplate       string            `json:"bodyTemplate,omitempty"`
+	BodyTemplate       string            `json:"body,omitempty"`
 	RequiredParameters []string          `json:"requiredParameters,omitempty"`
 }
 

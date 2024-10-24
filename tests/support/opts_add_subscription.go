@@ -20,7 +20,7 @@ type AddSubscriptionOptions struct {
 	HTTPMethod       string            `json:"method"`
 	HTTPURL          string            `json:"url"`
 	HTTPHeaders      map[string]string `json:"headers"`
-	HTTPBodyTemplate string            `json:"bodyTemplate"`
+	HTTPBodyTemplate string            `json:"body"`
 
 	SubscriptionTemplateID         *string        `json:"subscriptionTemplateId"`
 	SubscriptionTemplateParameters map[string]any `json:"subscriptionTemplateParameters"`

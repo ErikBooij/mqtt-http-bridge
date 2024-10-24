@@ -17,7 +17,7 @@ type updateSubscriptionRequest struct {
 	Method       string            `json:"method" validate:"required_without=SubscriptionTemplateID,omitempty,oneof=GET POST PUT PATCH DELETE"`
 	URL          string            `json:"url" validate:"required_without=SubscriptionTemplateID"`
 	Headers      map[string]string `json:"headers"`
-	BodyTemplate string            `json:"bodyTemplate"`
+	BodyTemplate string            `json:"body"`
 
 	SubscriptionTemplateID         *string        `json:"subscriptionTemplateId"`
 	SubscriptionTemplateParameters map[string]any `json:"subscriptionTemplateParameters"`
@@ -42,6 +42,8 @@ func updateSubscription(service subscription.Service) echo.HandlerFunc {
 		}
 
 		sub, err := service.UpdateSubscription(subscription.Subscription{
+			ID: c.Param("id"),
+
 			Name:  req.Name,
 			Topic: req.Topic,
 

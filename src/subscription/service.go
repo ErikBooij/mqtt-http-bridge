@@ -332,7 +332,11 @@ func (s *service) ApplyPlaceholdersOnSubscription(sub Subscription, params map[s
 
 	var err error
 
-	subClone, _ := utilities.DeepCopy(sub)
+	subClone, err := utilities.DeepCopy(sub)
+
+	if err != nil {
+		return Subscription{}, fmt.Errorf("%w: %w", ErrUnableToHydrateTemplatedSubscriptionProperty, err)
+	}
 
 	if subClone.Name, err = utilities.RenderInlineTemplate(subClone.Name, params); err != nil {
 		return Subscription{}, fmt.Errorf("%w name: %w", ErrUnableToHydrateTemplatedSubscriptionProperty, err)

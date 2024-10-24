@@ -56,6 +56,8 @@ func (p *publisher) start(ctx context.Context, client *http.Client) {
 }
 
 func (p *publisher) doPublish(job publisherJob, client *http.Client) {
+	p.logger.Printf("Publishing message to subscription %s (%s %s %s)\n", job.subscription.ID, job.subscription.Method, job.subscription.URL, job.body)
+
 	req, err := http.NewRequest(job.subscription.Method, job.subscription.URL, bytes.NewReader(job.body))
 	if err != nil {
 		p.logger.Printf("Error creating request for subscription %s: %s\n", job.subscription.ID, err)

@@ -106,14 +106,21 @@ type RunAppOptions struct {
 func runApp(t *testing.T, ctx context.Context, options RunAppOptions) {
 	appStartErr := make(chan error)
 
-	go process.Start(ctx, config.Config{
-		AppEnv:        "test",
-		BrokerAddress: "127.0.0.1",
-		BrokerPort:    options.MQTTPort,
-		OpenAuth:      true,
-		ServerPort:    options.HTTPPort,
-		Silent:        !options.AllowAppOutput,
-		StorageDriver: "memory",
+	go process.Start(ctx, &config.Config{
+		AppEnv: "test",
+		Broker: config.BrokerConfig{
+			Address:  "127.0.0.1",
+			Port:     options.MQTTPort,
+			OpenAuth: true,
+		},
+		Server: config.ServerConfig{
+			Address: "127.0.0.1",
+			Port:    options.HTTPPort,
+		},
+		Silent: !options.AllowAppOutput,
+		Storage: config.StorageConfig{
+			Driver: "memory",
+		},
 	}, appStartErr)
 
 	err := <-appStartErr

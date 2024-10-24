@@ -99,8 +99,8 @@ func (a *apiClient) DeleteSubscriptionTemplate(id string) {
 
 func (a *apiClient) SetGlobalParameter(parameter string, value any) {
 	a.client.do(http.MethodPost, "/global-parameters", bodyJson(SetGlobalParameterOptions{
-		Parameter: parameter,
-		Value:     value,
+		Key:   parameter,
+		Value: value,
 	}))
 }
 
@@ -165,7 +165,7 @@ type UpdateSubscriptionOptions struct {
 	HTTPMethod       string            `json:"method"`
 	HTTPURL          string            `json:"path"`
 	HTTPHeaders      map[string]string `json:"headers"`
-	HTTPBodyTemplate string            `json:"bodyTemplate"`
+	HTTPBodyTemplate string            `json:"body"`
 }
 
 type SubscriptionTemplateResponse struct {
@@ -204,7 +204,7 @@ type AddSubscriptionTemplateOptions struct {
 	HTTPMethod       string            `json:"method"`
 	HTTPURL          string            `json:"url"`
 	HTTPHeaders      map[string]string `json:"headers"`
-	HTTPBodyTemplate string            `json:"bodyTemplate"`
+	HTTPBodyTemplate string            `json:"body"`
 
 	RequiredParameters []string `json:"requiredParameters"`
 }
@@ -220,14 +220,14 @@ type UpdateSubscriptionTemplateOptions struct {
 	HTTPMethod       string            `json:"method"`
 	HTTPURL          string            `json:"path"`
 	HTTPHeaders      map[string]string `json:"headers"`
-	HTTPBodyTemplate string            `json:"bodyTemplate"`
+	HTTPBodyTemplate string            `json:"body"`
 
 	RequiredParameters []string `json:"requiredParameters"`
 }
 
 type SetGlobalParameterOptions struct {
-	Parameter string `json:"parameter"`
-	Value     any    `json:"value"`
+	Key   string `json:"key"`
+	Value any    `json:"value"`
 }
 
 type GlobalParameters struct {
