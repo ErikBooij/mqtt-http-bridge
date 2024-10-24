@@ -43,7 +43,6 @@ export const subscriptionForm = (
         renderParams(params, paramsElement);
     }
 
-
     const subForm = form<SubscriptionWithoutID>({
         selector,
         transformer: (data: FormData): SubscriptionWithoutID => {

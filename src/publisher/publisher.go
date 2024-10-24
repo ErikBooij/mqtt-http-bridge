@@ -78,4 +78,9 @@ func (p *publisher) doPublish(job publisherJob, client *http.Client) {
 	}
 
 	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		p.logger.Printf("Unexpected status code publishing message to subscription %s: %s\n", job.subscription.ID, resp.Status)
+		return
+	}
 }

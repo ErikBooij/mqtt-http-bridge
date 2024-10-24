@@ -12,7 +12,7 @@ const subscriptionSchema = z.object({
     extract: z.record(z.string(), z.string()).optional(),
     filter: z.string().optional(),
     method: z.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'HEAD', 'OPTIONS']),
-    url: z.string().url(),
+    url: z.string(),
     headers: z.record(z.string(), z.string()).optional(),
     body: z.string().optional(),
     templateId: z.string().uuid().optional(),
