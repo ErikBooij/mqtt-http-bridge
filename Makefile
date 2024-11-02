@@ -24,6 +24,10 @@ build-js:
 push-image:
 	docker push $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 
+.PHONY: run-dev
+run-dev:
+	process-compose up -n dev
+
 .PHONY: run-image
 run-image:
 	docker run --rm -e CONFIG_FILE=$(CONFIG_FILE) -v ./$(CONFIG_FILE):/app/$(CONFIG_FILE) -p 8081:8080 $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)

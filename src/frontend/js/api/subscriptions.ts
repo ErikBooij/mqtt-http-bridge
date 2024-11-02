@@ -15,8 +15,6 @@ const subscriptionSchema = z.object({
     url: z.string(),
     headers: z.record(z.string(), z.string()).optional(),
     body: z.string().optional(),
-    templateId: z.string().uuid().optional(),
-    templateParameters: z.map(z.string(), z.any()).optional(),
 }).strict();
 
 const subscriptionResponseSchema = z.object({

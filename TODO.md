@@ -8,8 +8,6 @@
   [ ] Update subscription
   [ ] View subscription
   [ ] Test/simulate subscription
-  [ ] Add subscription from template (keep attached)
-  [ ] Add subscription from template (detached)
 
 ## Tests
 [ ] Tests for processing
@@ -17,4 +15,3 @@
 
 ## Functionality
 [ ] Reverse flow (HTTP -> MQTT)
-[ ] Detach existing subscription from template

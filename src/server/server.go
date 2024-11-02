@@ -48,17 +48,9 @@ func New(service subscription.Service, cfg *config.Config) HTTPServer {
 	api.GET("/subscriptions", listSubscriptions(service))
 	api.POST("/subscriptions", addSubscription(service))
 
-	api.DELETE("/subscription-templates/:id", deleteSubscriptionTemplate(service))
-	api.GET("/subscription-templates/:id", getSubscriptionTemplate(service))
-	api.PUT("/subscription-templates/:id", updateSubscriptionTemplate(service))
-	api.GET("/subscription-templates", listSubscriptionTemplates(service))
-	api.POST("/subscription-templates", addSubscriptionTemplate(service))
-
 	api.DELETE("/global-parameters/:parameter", deleteGlobalParameter(service))
 	api.GET("/global-parameters", listGlobalParameters(service))
 	api.POST("/global-parameters", setGlobalParameter(service))
-
-	// TODO: Detach subscription from template endpoint.
 
 	return server
 }

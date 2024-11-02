@@ -20,18 +20,6 @@ type Subscription struct {
 	URL string `json:"url"`
 	// Headers is a map of headers to include in the request
 	Headers map[string]string `json:"headers"`
-	// BodyTemplate is the template to use for rendering the HTTP response body
-	BodyTemplate string `json:"template"`
-
-	// SubscriptionTemplateID is the optional ID of the template this subscription was derived from
-	SubscriptionTemplateID *string `json:"subscriptionTemplateId"`
-	// SubscriptionTemplateParameters is a map of parameters to use when deriving a subscription from a template
-	SubscriptionTemplateParameters map[string]any `json:"subscriptionTemplateParameters"`
-}
-
-type SubscriptionTemplate struct {
-	Subscription
-
-	// RequiredParameters is a list of parameters that must be provided when deriving a subscription from a template.
-	RequiredParameters []string `json:"requiredParameters"`
+	// Body is the template to use for rendering the HTTP response body
+	Body string `json:"template"`
 }

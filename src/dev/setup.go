@@ -10,14 +10,6 @@ func PopulateDataStore(service subscription.Service, logger *log.Logger) error {
 		return err
 	}
 
-	subTemp, err := addSubscriptionTemplate(service)
-
-	if err != nil {
-		return err
-	}
-
-	logger.Printf("Added subscription template with ID: %s", subTemp.ID)
-
 	sub1, err := addSubscription(service)
 
 	if err != nil {
@@ -25,14 +17,6 @@ func PopulateDataStore(service subscription.Service, logger *log.Logger) error {
 	}
 
 	logger.Printf("Added subscription with ID: %s", sub1.ID)
-
-	sub2, err := service.AddSubscriptionFromTemplate(subTemp.ID, map[string]any{"instanceId": "002"})
-
-	if err != nil {
-		return err
-	}
-
-	logger.Printf("Added subscription with ID: %s", sub2.ID)
 
 	if err := addGlobalVariable(service, "authToken", "abcdef"); err != nil {
 		return err
@@ -53,10 +37,10 @@ func addSubscription(service subscription.Service) (subscription.Subscription, e
 			"action":  "action",
 			"battery": "battery",
 		},
-		Filter:       "custom.action='1_short_release'",
-		BodyTemplate: `{"action":"{{.custom.action}}","battery":"{{.custom.battery}}"}`,
-		URL:          "https://straight-application-12.webhook.cool",
-		Method:       "PATCH",
+		Filter: "custom.action='1_short_release'",
+		Body:   `{"action":"{{.custom.action}}","battery":"{{.custom.battery}}"}`,
+		URL:    "https://straight-application-12.webhook.cool",
+		Method: "PATCH",
 		Headers: map[string]string{
 			"Authorization": "Bearer 123",
 			"Content-Type":  "application/json",
@@ -68,33 +52,4 @@ func addSubscription(service subscription.Service) (subscription.Subscription, e
 	}
 
 	return sub, err
-}
-
-func addSubscriptionTemplate(service subscription.Service) (subscription.SubscriptionTemplate, error) {
-	subTemp, err := service.AddSubscriptionTemplate(subscription.SubscriptionTemplate{
-		Subscription: subscription.Subscription{
-			Name:  "Shortcut Button {{.tpl.instanceId}}",
-			Topic: "zigbee2mqtt/shortcut-button-{{.tpl.instanceId}}",
-			Extract: map[string]string{
-				"action":  "action",
-				"battery": "battery",
-			},
-			Filter:       "custom.action='1_short_release'",
-			BodyTemplate: `{"action":"{{.parsed.action}}","battery":"{{ .parsed.battery }}","instanceId":"{{.tpl.instanceId}}"}`,
-			URL:          "https://straight-application-12.webhook.cool",
-			Method:       "PATCH",
-			Headers: map[string]string{
-				"Authorization": "Bearer {{.global.authToken}}",
-				"Content-Type":  "application/json",
-				"InstanceId":    "{{.tpl.instanceId}}",
-			},
-		},
-		RequiredParameters: []string{"instanceId"},
-	})
-
-	if err != nil {
-		return subscription.SubscriptionTemplate{}, err
-	}
-
-	return subTemp, nil
 }

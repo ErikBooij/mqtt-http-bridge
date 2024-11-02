@@ -17,13 +17,10 @@ type AddSubscriptionOptions struct {
 	Extract map[string]string `json:"extract"`
 	Filter  string            `json:"filter"`
 
-	HTTPMethod       string            `json:"method"`
-	HTTPURL          string            `json:"url"`
-	HTTPHeaders      map[string]string `json:"headers"`
-	HTTPBodyTemplate string            `json:"body"`
-
-	SubscriptionTemplateID         *string        `json:"subscriptionTemplateId"`
-	SubscriptionTemplateParameters map[string]any `json:"subscriptionTemplateParameters"`
+	HTTPMethod  string            `json:"method"`
+	HTTPURL     string            `json:"url"`
+	HTTPHeaders map[string]string `json:"headers"`
+	HTTPBody    string            `json:"body"`
 }
 
 func (aso AddSubscriptionOptions) WithName(name string) AddSubscriptionOptions {
@@ -86,23 +83,9 @@ func (aso AddSubscriptionOptions) WithHTTPHeaders(headers map[string]string) Add
 	return clone
 }
 
-func (aso AddSubscriptionOptions) WithHTTPBodyTemplate(template string) AddSubscriptionOptions {
+func (aso AddSubscriptionOptions) WithHTTPBody(template string) AddSubscriptionOptions {
 	clone := aso
-	clone.HTTPBodyTemplate = template
-
-	return clone
-}
-
-func (aso AddSubscriptionOptions) WithSubscriptionTemplateID(id string) AddSubscriptionOptions {
-	clone := aso
-	clone.SubscriptionTemplateID = &id
-
-	return clone
-}
-
-func (aso AddSubscriptionOptions) WithSubscriptionTemplateParameters(parameters map[string]any) AddSubscriptionOptions {
-	clone := aso
-	clone.SubscriptionTemplateParameters = parameters
+	clone.HTTPBody = template
 
 	return clone
 }

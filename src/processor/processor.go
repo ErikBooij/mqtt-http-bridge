@@ -186,18 +186,18 @@ func (p *processor) filterMessage(sub subscription.Subscription, parameters map[
 }
 
 func (p *processor) renderTemplate(sub subscription.Subscription, parameters map[string]any, message string) []byte {
-	cacheKey := utilities.MD5Hash(sub.BodyTemplate)
+	cacheKey := utilities.MD5Hash(sub.Body)
 
 	p.templateCacheMu.RLock()
 	tmpl, ok := p.templateCache[cacheKey]
 	p.templateCacheMu.RUnlock()
 
 	if !ok {
-		if sub.BodyTemplate == "" {
+		if sub.Body == "" {
 			tmpl = nil
 		} else {
 			var err error
-			tmpl, err = template.New(cacheKey).Parse(sub.BodyTemplate)
+			tmpl, err = template.New(cacheKey).Parse(sub.Body)
 
 			if err != nil {
 				tmpl = nil
