@@ -8,19 +8,16 @@ import (
 var _ Store = &memoryStore{}
 
 type memoryStore struct {
-	globalParameters        map[string]any
-	globalParametersMu      sync.RWMutex
-	subscriptions           map[string]SubscriptionRecord
-	subscriptionsMu         sync.RWMutex
-	subscriptionTemplates   map[string]SubscriptionTemplateRecord
-	subscriptionTemplatesMu sync.RWMutex
+	globalParameters   map[string]any
+	globalParametersMu sync.RWMutex
+	subscriptions      map[string]SubscriptionRecord
+	subscriptionsMu    sync.RWMutex
 }
 
 func Memory() (Store, error) {
 	return &memoryStore{
-		globalParameters:      make(map[string]any),
-		subscriptions:         make(map[string]SubscriptionRecord),
-		subscriptionTemplates: make(map[string]SubscriptionTemplateRecord),
+		globalParameters: make(map[string]any),
+		subscriptions:    make(map[string]SubscriptionRecord),
 	}, nil
 }
 
@@ -80,65 +77,6 @@ func (s *memoryStore) DeleteSubscription(id string) error {
 	}
 
 	delete(s.subscriptions, id)
-	return nil
-}
-
-func (s *memoryStore) AddSubscriptionTemplate(subTemp SubscriptionTemplateRecord) (SubscriptionTemplateRecord, error) {
-	s.subscriptionTemplatesMu.Lock()
-	defer s.subscriptionTemplatesMu.Unlock()
-
-	s.subscriptionTemplates[subTemp.ID] = subTemp
-
-	return subTemp, nil
-}
-
-func (s *memoryStore) GetSubscriptionTemplate(id string) (SubscriptionTemplateRecord, error) {
-	s.subscriptionTemplatesMu.RLock()
-	defer s.subscriptionTemplatesMu.RUnlock()
-
-	subTemp, ok := s.subscriptionTemplates[id]
-
-	if !ok {
-		return SubscriptionTemplateRecord{}, ErrSubscriptionTemplateNotFound
-	}
-
-	return subTemp, nil
-}
-
-func (s *memoryStore) GetSubscriptionTemplates() ([]SubscriptionTemplateRecord, error) {
-	s.subscriptionTemplatesMu.RLock()
-	defer s.subscriptionTemplatesMu.RUnlock()
-
-	subscriptionTemplates := make([]SubscriptionTemplateRecord, 0, len(s.subscriptionTemplates))
-
-	for _, subTemp := range s.subscriptionTemplates {
-		subscriptionTemplates = append(subscriptionTemplates, subTemp)
-	}
-
-	return subscriptionTemplates, nil
-}
-
-func (s *memoryStore) UpdateSubscriptionTemplate(subTemp SubscriptionTemplateRecord) (SubscriptionTemplateRecord, error) {
-	s.subscriptionTemplatesMu.Lock()
-	defer s.subscriptionTemplatesMu.Unlock()
-
-	if _, ok := s.subscriptionTemplates[subTemp.ID]; !ok {
-		return SubscriptionTemplateRecord{}, ErrSubscriptionNotFound
-	}
-
-	s.subscriptionTemplates[subTemp.ID] = subTemp
-	return subTemp, nil
-}
-
-func (s *memoryStore) DeleteSubscriptionTemplate(id string) error {
-	s.subscriptionTemplatesMu.Lock()
-	defer s.subscriptionTemplatesMu.Unlock()
-
-	if _, ok := s.subscriptionTemplates[id]; !ok {
-		return ErrSubscriptionTemplateNotFound
-	}
-
-	delete(s.subscriptionTemplates, id)
 	return nil
 }
 

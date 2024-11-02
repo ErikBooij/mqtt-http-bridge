@@ -137,7 +137,6 @@ func sharedGlobalTemplateParameters() globalTemplateParameters {
 		JSFiles: make([]string, 0),
 		MenuItems: []MenuItem{
 			{"Subscriptions", "/subscriptions", false},
-			{"Templates", "/templates", false},
 			{"Global Parameters", "/global-parameters", false},
 			{"MQTT", "/mqtt", false},
 		},

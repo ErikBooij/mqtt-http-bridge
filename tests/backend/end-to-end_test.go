@@ -36,7 +36,7 @@ func TestWebhooksArriveAfterSettingUpPlainSubscriptions(t *testing.T) {
 			WithHTTPURL(fmt.Sprintf("%s/webhooks", testApp.MockServers[0].URL)).
 			WithHTTPHeader("Authorization", "Bearer {{.global.authTokenService1}}").
 			WithHTTPHeader("Content-Type", "application/json").
-			WithHTTPBodyTemplate(`{"action":"{{.extract.actionParam}}","translated":true}`),
+			WithHTTPBody(`{"action":"{{.extract.actionParam}}","translated":true}`),
 	)
 	testApp.AddSubscription(
 		subscriptionBase.

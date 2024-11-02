@@ -18,9 +18,8 @@ type fileStore struct {
 
 func File(filename string, reloadInterval time.Duration) (Store, error) {
 	storage := &storage{
-		GlobalParameters:      make(map[string]any),
-		Subscriptions:         make(map[string]SubscriptionRecord),
-		SubscriptionTemplates: make(map[string]SubscriptionTemplateRecord),
+		GlobalParameters: make(map[string]any),
+		Subscriptions:    make(map[string]SubscriptionRecord),
 
 		filename: filename,
 	}
@@ -111,71 +110,6 @@ func (s *fileStore) DeleteSubscription(id string) error {
 	return nil
 }
 
-func (s *fileStore) AddSubscriptionTemplate(subTemp SubscriptionTemplateRecord) (SubscriptionTemplateRecord, error) {
-	defer s.storage.flush()
-
-	s.storage.subscriptionTemplatesMu.Lock()
-	defer s.storage.subscriptionTemplatesMu.Unlock()
-
-	s.storage.SubscriptionTemplates[subTemp.ID] = subTemp
-
-	return subTemp, nil
-}
-
-func (s *fileStore) GetSubscriptionTemplate(id string) (SubscriptionTemplateRecord, error) {
-	s.storage.subscriptionTemplatesMu.RLock()
-	defer s.storage.subscriptionTemplatesMu.RUnlock()
-
-	subTemp, ok := s.storage.SubscriptionTemplates[id]
-
-	if !ok {
-		return SubscriptionTemplateRecord{}, ErrSubscriptionTemplateNotFound
-	}
-
-	return subTemp, nil
-}
-
-func (s *fileStore) GetSubscriptionTemplates() ([]SubscriptionTemplateRecord, error) {
-	s.storage.subscriptionTemplatesMu.RLock()
-	defer s.storage.subscriptionTemplatesMu.RUnlock()
-
-	subscriptionTemplates := make([]SubscriptionTemplateRecord, 0, len(s.storage.SubscriptionTemplates))
-
-	for _, subTemp := range s.storage.SubscriptionTemplates {
-		subscriptionTemplates = append(subscriptionTemplates, subTemp)
-	}
-
-	return subscriptionTemplates, nil
-}
-
-func (s *fileStore) UpdateSubscriptionTemplate(subTemp SubscriptionTemplateRecord) (SubscriptionTemplateRecord, error) {
-	defer s.storage.flush()
-
-	s.storage.subscriptionTemplatesMu.Lock()
-	defer s.storage.subscriptionTemplatesMu.Unlock()
-
-	if _, ok := s.storage.SubscriptionTemplates[subTemp.ID]; !ok {
-		return SubscriptionTemplateRecord{}, ErrSubscriptionNotFound
-	}
-
-	s.storage.SubscriptionTemplates[subTemp.ID] = subTemp
-	return subTemp, nil
-}
-
-func (s *fileStore) DeleteSubscriptionTemplate(id string) error {
-	defer s.storage.flush()
-
-	s.storage.subscriptionTemplatesMu.Lock()
-	defer s.storage.subscriptionTemplatesMu.Unlock()
-
-	if _, ok := s.storage.SubscriptionTemplates[id]; !ok {
-		return ErrSubscriptionTemplateNotFound
-	}
-
-	delete(s.storage.SubscriptionTemplates, id)
-	return nil
-}
-
 func (s *fileStore) SetGlobalParameter(key string, value any) error {
 	defer s.storage.flush()
 
@@ -214,13 +148,11 @@ func (s *fileStore) DeleteGlobalParameter(key string) error {
 }
 
 type storage struct {
-	GlobalParameters      map[string]any                        `json:"globalParameters"`
-	Subscriptions         map[string]SubscriptionRecord         `json:"subscriptions"`
-	SubscriptionTemplates map[string]SubscriptionTemplateRecord `json:"subscriptionTemplates"`
+	GlobalParameters map[string]any                `json:"globalParameters"`
+	Subscriptions    map[string]SubscriptionRecord `json:"subscriptions"`
 
-	globalParametersMu      sync.RWMutex
-	subscriptionsMu         sync.RWMutex
-	subscriptionTemplatesMu sync.RWMutex
+	globalParametersMu sync.RWMutex
+	subscriptionsMu    sync.RWMutex
 
 	filename string
 	fsMu     sync.RWMutex
@@ -263,10 +195,6 @@ func (s *storage) load() error {
 
 	if s.Subscriptions == nil {
 		s.Subscriptions = make(map[string]SubscriptionRecord)
-	}
-
-	if s.SubscriptionTemplates == nil {
-		s.SubscriptionTemplates = make(map[string]SubscriptionTemplateRecord)
 	}
 
 	return nil

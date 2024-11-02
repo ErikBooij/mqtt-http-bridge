@@ -8,19 +8,16 @@ import (
 )
 
 type addSubscriptionRequest struct {
-	Name  string `json:"name" validate:"required_without=SubscriptionTemplateID"`
-	Topic string `json:"topic" validate:"required_without=SubscriptionTemplateID"`
+	Name  string `json:"name" validate:"required"`
+	Topic string `json:"topic" validate:"required"`
 
 	Extract map[string]string `json:"extract"`
 	Filter  string            `json:"filter"`
 
-	Method       string            `json:"method" validate:"required_without=SubscriptionTemplateID,omitempty,oneof=GET POST PUT PATCH DELETE"`
-	URL          string            `json:"url" validate:"required_without=SubscriptionTemplateID"`
-	Headers      map[string]string `json:"headers"`
-	BodyTemplate string            `json:"body"`
-
-	SubscriptionTemplateID         *string        `json:"subscriptionTemplateId"`
-	SubscriptionTemplateParameters map[string]any `json:"subscriptionTemplateParameters"`
+	Method  string            `json:"method" validate:"required,oneof=GET POST PUT PATCH DELETE"`
+	URL     string            `json:"url" validate:"required"`
+	Headers map[string]string `json:"headers"`
+	Body    string            `json:"body"`
 }
 
 func addSubscription(service subscription.Service) echo.HandlerFunc {
@@ -31,16 +28,6 @@ func addSubscription(service subscription.Service) echo.HandlerFunc {
 			return ErrorResponse(c, http.StatusBadRequest, fmt.Errorf("invalid request: %w", err))
 		}
 
-		if req.SubscriptionTemplateID != nil {
-			sub, err := service.AddSubscriptionFromTemplate(*req.SubscriptionTemplateID, req.SubscriptionTemplateParameters)
-
-			if err != nil {
-				return ErrorResponse(c, mapErrorCode(err), fmt.Errorf("failed to add subscription from template: %w", err))
-			}
-
-			return c.JSON(http.StatusCreated, map[string]any{"subscription": subscriptionToResponse(sub)})
-		}
-
 		sub, err := service.AddSubscription(subscription.Subscription{
 			Name:  req.Name,
 			Topic: req.Topic,
@@ -48,10 +35,10 @@ func addSubscription(service subscription.Service) echo.HandlerFunc {
 			Extract: req.Extract,
 			Filter:  req.Filter,
 
-			Method:       req.Method,
-			URL:          req.URL,
-			Headers:      req.Headers,
-			BodyTemplate: req.BodyTemplate,
+			Method:  req.Method,
+			URL:     req.URL,
+			Headers: req.Headers,
+			Body:    req.Body,
 		})
 
 		if err != nil {
