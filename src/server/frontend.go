@@ -37,7 +37,7 @@ func globalParameterCreate(tpl templateRenderer) echo.HandlerFunc {
 	}
 }
 
-func globalParameterUpdate(tpl templateRenderer, service subscription.Service) echo.HandlerFunc {
+func globalParameterEdit(tpl templateRenderer, service subscription.Service) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		key := c.Param("key")
 
@@ -85,7 +85,7 @@ func subscriptionCreate(tpl templateRenderer) echo.HandlerFunc {
 	}
 }
 
-func subscriptionUpdate(tpl templateRenderer, service subscription.Service) echo.HandlerFunc {
+func subscriptionEdit(tpl templateRenderer, service subscription.Service) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		subID := c.Param("id")
 

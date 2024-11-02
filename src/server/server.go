@@ -29,12 +29,12 @@ func New(service subscription.Service, cfg *config.Config) HTTPServer {
 	server.GET("/", redirect("/subscriptions"))
 
 	server.GET("/subscriptions", subscriptions(tplRenderer))
-	server.GET("/subscriptions/:id", subscriptionUpdate(tplRenderer, service))
-	server.GET("/subscriptions/create", subscriptionCreate(tplRenderer))
+	server.GET("/subscriptions/:id", subscriptionEdit(tplRenderer, service))
+	server.GET("/new-subscription", subscriptionCreate(tplRenderer))
 
 	server.GET("/global-parameters", globalParameters(tplRenderer))
-	server.GET("/global-parameters/:key", globalParameterUpdate(tplRenderer, service))
-	server.GET("/global-parameters/create", globalParameterCreate(tplRenderer))
+	server.GET("/global-parameters/:key", globalParameterEdit(tplRenderer, service))
+	server.GET("/new-global-parameter", globalParameterCreate(tplRenderer))
 
 	api := server.Group("/api/v1")
 
