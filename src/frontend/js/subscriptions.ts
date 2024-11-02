@@ -17,6 +17,7 @@ async function init () {
         order: ['id', 'name', 'topic', 'target'],
         actions: ({ id }) => [
             { type: 'normal', label: 'Edit', href: '/subscriptions/' + id },
+            { type: 'normal', label: 'Duplicate', href: '/new-subscription?base=' + id },
             { type: 'destructive', label: 'Delete', action: async (_: SubscriptionTableEntry, t: Table<SubscriptionTableEntry>) => { if (await handleDeleteSubscription(id)) { t.removeRow(({ id: subId }) => subId === id ) } } },
         ],
         columns: {
@@ -46,7 +47,7 @@ async function init () {
             target: {
                 label: 'Target',
                 renderer: ({ method, url }) => {
-                    return elementFromTemplate(`<span class="flex items-center gap-x-1"><span class="font-mono text-xs tracking-wider ${httpMethodColors[method]} font-bold px-1 py-0.5 rounded-sm">${method}</span> ${url}</span>`)
+                    return elementFromTemplate(`<span class="flex items-center gap-x-1 truncate"><span class="font-mono text-xs tracking-wider ${httpMethodColors[method]} font-bold px-1 py-0.5 rounded-sm">${method}</span> ${url}</span>`)
                 },
             },
         }

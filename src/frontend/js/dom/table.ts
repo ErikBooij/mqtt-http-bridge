@@ -57,7 +57,7 @@ export const table = <T extends TableEntry>(selector: string, options?: TableRen
         throw new Error(`Element with selector ${selector} not found`);
     }
 
-    element.classList.add('divide-y', 'divide-gray-300', 'table-fixed')
+    element.classList.add('divide-y', 'divide-gray-300', 'border-collapse', 'w-full', 'table-fixed')
 
     const removeRows = (select: (item: T) => boolean, max?: number) => {
         let removed = 0;

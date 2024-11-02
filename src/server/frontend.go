@@ -74,12 +74,29 @@ func subscriptions(tpl templateRenderer) echo.HandlerFunc {
 	}
 }
 
-func subscriptionCreate(tpl templateRenderer) echo.HandlerFunc {
+func subscriptionCreate(tpl templateRenderer, service subscription.Service) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		base := ""
+
+		if base = c.QueryParam("base"); base != "" {
+			_, err := service.GetSubscription(base)
+
+			switch {
+			case errors.Is(err, datastore.ErrSubscriptionNotFound):
+				return errorPage(c, tpl, 404, "Base subscription not found")
+			case err != nil:
+				return errorPage(c, tpl, 500, "Internal server error")
+			}
+		}
+
 		params := sharedGlobalTemplateParameters()
 
 		params.JSFiles = []string{"/assets/subscription.js"}
 		params.PageTitle = "Subscription"
+		params.Data = map[string]any{
+			"SubscriptionID": base,
+			"Mode":           "create",
+		}
 
 		return tpl.Render(c, "subscription.gohtml", params.WithCurrentMenuItem("Subscriptions"))
 	}
@@ -104,6 +121,7 @@ func subscriptionEdit(tpl templateRenderer, service subscription.Service) echo.H
 		params.PageTitle = "Subscription"
 		params.Data = map[string]any{
 			"SubscriptionID": subID,
+			"Mode":           "edit",
 		}
 
 		return tpl.Render(c, "subscription.gohtml", params.WithCurrentMenuItem("Subscriptions"))

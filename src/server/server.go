@@ -30,7 +30,7 @@ func New(service subscription.Service, cfg *config.Config) HTTPServer {
 
 	server.GET("/subscriptions", subscriptions(tplRenderer))
 	server.GET("/subscriptions/:id", subscriptionEdit(tplRenderer, service))
-	server.GET("/new-subscription", subscriptionCreate(tplRenderer))
+	server.GET("/new-subscription", subscriptionCreate(tplRenderer, service))
 
 	server.GET("/global-parameters", globalParameters(tplRenderer))
 	server.GET("/global-parameters/:key", globalParameterEdit(tplRenderer, service))

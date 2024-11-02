@@ -9,7 +9,7 @@
 <div class="-mx-4 mt-8 sm:-mx-0 sm:grid sm:grid-cols-12 gap-x-4">
     <div class="js-form sm:col-span-8"></div>
     <div class="js-params sm:col-span-4"></div>
-    <script>window.subscriptionID = '{{ .Data.SubscriptionID }}';</script>
+    <script>initializeSubscriptionForm('{{ .Data.SubscriptionID }}', '{{ .Data.Mode }}');</script>
 </div>
 
 {{ template "footer" . }}
