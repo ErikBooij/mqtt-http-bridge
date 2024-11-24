@@ -41,6 +41,7 @@ func New(service subscription.Service, cfg *config.Config) HTTPServer {
 	api.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]any{"status": "ok"})
 	})
+	api.POST("/validate", validate())
 
 	api.DELETE("/subscriptions/:id", deleteSubscription(service))
 	api.GET("/subscriptions/:id", getSubscription(service))
