@@ -1,4 +1,4 @@
-FROM oven/bun:1.1.30 AS fe-builder
+FROM oven/bun:1.1.40 AS fe-builder
 
 WORKDIR /app
 
