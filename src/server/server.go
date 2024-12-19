@@ -13,16 +13,6 @@ type HTTPServer interface {
 	Start(address string) error
 }
 
-var fePaths = []string{
-	"/",
-	"/subscriptions",
-	"/subscriptions/:id",
-	"/new-subscription",
-	"/global-parameters",
-	"/global-parameters/:key",
-	"/new-global-parameter",
-}
-
 func New(service subscription.Service, cfg *config.Config) HTTPServer {
 	server := echo.New()
 	server.Binder = newBinder()
