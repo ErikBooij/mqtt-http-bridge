@@ -13,9 +13,17 @@ type HTTPServer interface {
 	Start(address string) error
 }
 
-func New(service subscription.Service, cfg *config.Config) HTTPServer {
-	tplRenderer := newTemplateRenderer(cfg)
+var fePaths = []string{
+	"/",
+	"/subscriptions",
+	"/subscriptions/:id",
+	"/new-subscription",
+	"/global-parameters",
+	"/global-parameters/:key",
+	"/new-global-parameter",
+}
 
+func New(service subscription.Service, cfg *config.Config) HTTPServer {
 	server := echo.New()
 	server.Binder = newBinder()
 	server.Validator = newValidator()
@@ -26,15 +34,7 @@ func New(service subscription.Service, cfg *config.Config) HTTPServer {
 
 	server.GET("/assets/*", assets(cfg))
 
-	server.GET("/", redirect("/subscriptions"))
-
-	server.GET("/subscriptions", subscriptions(tplRenderer))
-	server.GET("/subscriptions/:id", subscriptionEdit(tplRenderer, service))
-	server.GET("/new-subscription", subscriptionCreate(tplRenderer, service))
-
-	server.GET("/global-parameters", globalParameters(tplRenderer))
-	server.GET("/global-parameters/:key", globalParameterEdit(tplRenderer, service))
-	server.GET("/new-global-parameter", globalParameterCreate(tplRenderer))
+	server.Any("/*", app())
 
 	api := server.Group("/api/v1")
 
@@ -53,5 +53,13 @@ func New(service subscription.Service, cfg *config.Config) HTTPServer {
 	api.GET("/global-parameters", listGlobalParameters(service))
 	api.POST("/global-parameters", setGlobalParameter(service))
 
+	api.Any("/*", apiError(http.StatusNotFound, "Not Found"))
+
 	return server
+}
+
+func apiError(code int, message string) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		return c.JSON(code, map[string]any{"error": message})
+	}
 }

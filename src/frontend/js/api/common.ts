@@ -1,11 +1,11 @@
-import {ZodError} from "zod";
+import { ZodError } from 'zod';
 
 export type APIError = {
     statusCode: number;
-    message: string;
+    message: string | string[];
 }
 
-export type MaybeAPIError<T> = [T, null] | [null, APIError];
+export type MaybeAPIError<T> = [ T, null ] | [ null, APIError ];
 export type AsyncMaybeAPIError<T> = Promise<MaybeAPIError<T>>;
 
 export const apiErrorFromResponse = async (response: Response): Promise<APIError> => {
@@ -13,21 +13,22 @@ export const apiErrorFromResponse = async (response: Response): Promise<APIError
         const body = await response.json();
 
         if (isApiError(body)) {
-            return {statusCode: response.status, message: body.error};
+            return { statusCode: response.status, message: body.error };
         }
-    } catch (e) {}
+    } catch (e) {
+    }
 
-    return {statusCode: response.status, message: 'Unknown error'};
+    return { statusCode: response.status, message: 'Unknown error' };
 }
 
 type errorBodyType = {
-    error: string
+    error: string | string[];
 }
 
-const isApiError = (body: any): body is errorBodyType => {
-    return typeof body === 'object' && 'error' in body && typeof body.error === 'string';
+const isApiError = (body: unknown): body is errorBodyType => {
+    return body !== null && typeof body === 'object' && 'error' in body && (typeof body.error === 'string' || Array.isArray(body.error));
 }
 
 export const responseParseError = (error: ZodError): APIError => {
-    return {statusCode: 0, message: error.toString()};
+    return { statusCode: 0, message: error.toString() };
 }
