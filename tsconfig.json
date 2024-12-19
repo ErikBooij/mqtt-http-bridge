@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react",
     "lib": ["ES2019", "DOM"],
     "moduleResolution": "NodeNext",
     "target": "ES6",

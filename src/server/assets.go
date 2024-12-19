@@ -20,3 +20,9 @@ func assets(cfg *config.Config) echo.HandlerFunc {
 
 	return echo.WrapHandler(http.StripPrefix("/assets", http.FileServer(http.FS(dir))))
 }
+
+func app() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		return c.File("src/frontend/dist/index.html")
+	}
+}
