@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-    createSubscription,
+    createSubscription, deleteSubscription,
     fetchSubscription,
     fetchSubscriptions,
     Subscription,
@@ -26,6 +26,20 @@ export const useCreateSubscription = ({ onSuccess }: { onSuccess?: () => void}) 
             queryClient.invalidateQueries({ queryKey: listSubscriptionsQueryKey() });
 
             onSuccess?.();
+        },
+    })
+}
+
+export const useDeleteSubscription = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id }: { id: string }): Promise<void> => {
+            return unpackMaybeAPIError(await deleteSubscription(id));
+        },
+        onSuccess: (_, { id }) => {
+            queryClient.invalidateQueries({ queryKey: listSubscriptionsQueryKey() });
+            queryClient.invalidateQueries({ queryKey: fetchSubscriptionQueryKey(id) });
         },
     })
 }
