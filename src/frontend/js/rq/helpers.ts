@@ -1,8 +1,6 @@
 import { MaybeAPIError } from '../api/common';
 
 export const unpackMaybeAPIError = <T>([ value, error ]: MaybeAPIError<T>): T => {
-    console.log({ value, error });
-
     if (error !== null) {
         throw new ApiRequestError(error.message);
     }

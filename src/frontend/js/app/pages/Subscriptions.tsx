@@ -3,7 +3,7 @@ import { LayoutContext } from '../components/Layout';
 import { Subscription } from '../../api/subscriptions';
 import { Link } from 'react-router-dom';
 import { PageTitle } from '../components/PageTitle';
-import { useListSubscriptions } from '../../rq/subscription';
+import { useDeleteSubscription, useFetchSubscription, useListSubscriptions } from '../../rq/subscription';
 
 export const Subscriptions = () => {
     const { setCurrentPage } = useContext(LayoutContext);
@@ -43,6 +43,8 @@ export const Subscriptions = () => {
 const SubscriptionItem = ({ subscription }: { subscription: Subscription }) => {
     const [ menuOpen, setMenuOpen ] = useState(false);
 
+    const deleteSubscription = useDeleteSubscription()
+
     return (
         <li className="flex items-center justify-between gap-x-6 py-5">
             <div className="min-w-0">
@@ -79,7 +81,10 @@ const SubscriptionItem = ({ subscription }: { subscription: Subscription }) => {
                         <Link to={ `/copy-subscription/${subscription.id}` }
                            className="block px-3 py-1 text-sm/6 text-gray-900" role="menuitem" tabIndex={ -1 }
                            id="options-menu-0-item-0">Duplicate</Link>
-                        <Link to="#" className="block px-3 py-1 text-sm/6 text-red-900 js-delete-subscription"
+                        <Link onClick={ (e) => {
+                            e.preventDefault();
+                            deleteSubscription.mutate({ id: subscription.id })
+                        }} to="#" className="block px-3 py-1 text-sm/6 text-red-900 js-delete-subscription"
                            role="menuitem" tabIndex={ -1 } id="options-menu-0-item-2">Delete</Link>
                     </div>
                 </div>

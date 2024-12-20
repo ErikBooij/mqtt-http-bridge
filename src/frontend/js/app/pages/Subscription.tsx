@@ -6,6 +6,8 @@ import { PageTitle } from '../components/PageTitle';
 import { Select, TextArea, TextField, Validator } from '../components/forms/input';
 import { SubscriptionWithoutID as APISubscription } from '../../api/subscriptions';
 import { Validation, validator } from '../components/forms/validation';
+import { useListGlobalParameters } from '../../rq/parameter';
+import { CopyIcon, copyIcon } from '../../shared/icons';
 
 type Props = {
     mode: 'new' | 'copy' | 'edit';
@@ -33,6 +35,34 @@ export const Subscription = ({ mode }: Props) => {
     const afterSave = () => {
         navigate('/');
     }
+
+    const globalParameters = useListGlobalParameters();
+
+    const [ parameters, setParameters ] = useState<{ extract: string[], global: string[], meta: string[] }>({
+        extract: [],
+        global: [],
+        meta: [
+            'topic',
+            'client',
+            'payload',
+        ],
+    });
+
+    useEffect(() => {
+        if (globalParameters.data) {
+            setParameters(p => ( {
+                ...p,
+                global: Object.keys(globalParameters.data),
+            } ));
+        }
+
+        if (extract) {
+            setParameters(p => ( {
+                ...p,
+                extract: Object.keys(extract),
+            } ));
+        }
+    }, [ globalParameters.data, extract ]);
 
     const createSubscription = useCreateSubscription({ onSuccess: afterSave });
     const updateSubscription = useUpdateSubscription({ onSuccess: afterSave });
@@ -96,14 +126,14 @@ export const Subscription = ({ mode }: Props) => {
                 onClick: saveSubscription,
                 disabled: Object.values(validations).some(v => !v)
             } }>Subscription</PageTitle>
-            <div className="sm:grid sm:grid-cols-12">
+            <div className="flex flex-col-reverse sm:grid sm:grid-cols-12 sm:gap-x-8">
                 <div className="sm:col-span-8">
                     <form
                         className="space-y-8 border-b pb-12 sm:space-y-8 sm:divide-gray-900/10 sm:divide-y-2 sm:pb-16">
                         <Section>
                             <FieldRow label="Name">
                                 <TextField value={ name } onChange={ setName }
-                                           validator={ registerValidation('name', { required: true }) }/>
+                                           validator={ registerValidation('name', { required: true, regex: /^[0-9A-Za-z]([0-9A-Za-z.\-_|\\/ ]*[0-9A-Za-z])?$/ }) }/>
                             </FieldRow>
                         </Section>
                         <Section>
@@ -112,7 +142,7 @@ export const Subscription = ({ mode }: Props) => {
                             </SectionHeading>
                             <FieldRow label="Topic">
                                 <TextField value={ topic } onChange={ setTopic }
-                                           validator={ registerValidation('topic', { required: true }) }
+                                           validator={ registerValidation('topic', { required: true, regex: /^(\/?(([^#+\\/]*|\+)(\/([^#+\\/]*|\+))*)?\/?#?)$/ }) }
                                 />
                             </FieldRow>
                             <FieldRow label="Extract">
@@ -160,6 +190,36 @@ export const Subscription = ({ mode }: Props) => {
                         </Section>
                     </form>
                 </div>
+                <div className="sm:col-span-4 pt-8">
+                    <div className="bg-blue-200/50 p-4 rounded-md">
+                        <h3 className="text-sm font-medium">Parameters</h3>
+                        {
+                            Object.entries(parameters)
+                                .sort(([ sectionA ], [ sectionB ]) => sectionA.localeCompare(sectionB))
+                                .map(([ section, keys ]) => (
+                                    <div key={ section } className="mt-4">
+                                        <ul className="overflow-hidden rounded-md bg-white px-4 py-4 shadow">
+                                            {
+                                                keys.sort(([ keyA ], [ keyB ]) => keyA.localeCompare(keyB) ).map(key => (
+                                                    <li key={ key }
+                                                        className="whitespace-nowrap flex items-center gap-x-2 py-1 cursor-pointer hover:bg-gray-100 -mx-2 px-2 rounded-md"
+                                                        onClick={ () => navigator.clipboard.writeText(`{{ .${ section }.${ key } }}`) }
+                                                    >
+                                                        { <CopyIcon /> }
+                                                    <span className="font-mono text-sm">
+                                                        { section }
+                                                        .
+                                                        <span className="font-bold">{ key }
+                                                    </span>
+                                            </span></li>
+                                                ))
+                                            }
+                                        </ul>
+                                    </div>
+                                ))
+                        }
+                    </div>
+                </div>
             </div>
         </div>
     );
@@ -173,11 +233,6 @@ const ExpandingKeyValue = ({ onChange, value, keyValidation, valueValidation }: 
 }) => {
     const [ rows, setRows ] = useState<[ string, string ][]>([ ...Object.entries(value || {}), [ '', '' ] ]);
 
-    const reportLatestState = () => {
-        onChange?.(Object.fromEntries(rows.filter(([ key, value ]) => key && value)));
-        console.log({ rows });
-    }
-
     const onChangeKey = (i: number) => (e: string) => {
         setRows(r => {
             const newValue = [ ...r ];
@@ -190,8 +245,6 @@ const ExpandingKeyValue = ({ onChange, value, keyValidation, valueValidation }: 
 
             return newValue;
         })
-
-        reportLatestState();
     }
 
     const onChangeValue = (i: number) => (e: string) => {
@@ -206,9 +259,11 @@ const ExpandingKeyValue = ({ onChange, value, keyValidation, valueValidation }: 
 
             return newValue;
         })
-
-        reportLatestState();
     }
+
+    useEffect(() => {
+        onChange?.(Object.fromEntries(rows.filter(([ key, value ]) => key && value)));
+    }, [ rows ]);
 
     return <div className="flex gap-y-2 flex-col">
         { rows.map(([ key, value ], i) => (
