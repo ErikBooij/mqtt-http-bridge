@@ -156,9 +156,7 @@ func (s *mqttSocketServer) publishHistory(conn *websocket.Conn, lastSeenSequence
 	messages := make([]historyEntry, 0, len(s.history)*s.historySize)
 
 	for _, historyMessages := range s.history {
-		for _, m := range historyMessages {
-			messages = append(messages, m)
-		}
+		messages = append(messages, historyMessages...)
 	}
 
 	slices.SortFunc(messages, func(a, b historyEntry) int {
