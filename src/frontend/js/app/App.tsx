@@ -28,7 +28,7 @@ export const App = () => {
                             {/* Overview page (parameter list) */ }
                             <Route path="parameters" element={ <Parameters/> }/>
                             {/* Individual parameter page (as edit form) */ }
-                            <Route path="parameter/:id" element={ <Parameter/> }/>
+                            <Route path="parameters/:key" element={ <Parameter/> }/>
                             {/* New parameter page (same as edit form, with no prefill, and different save action) */ }
                             <Route path="new-parameter" element={ <Parameter/> }/>
                             {/* Page with live MQTT data from all connected servers */ }

@@ -19,9 +19,11 @@ const menuItems = [
     }
 ] as const;
 
+export type CurrentPage = typeof menuItems[number]['id'];
+
 type LayoutContextData = {
-    currentPage: typeof menuItems[number]['id'];
-    setCurrentPage: (currentPage: typeof menuItems[number]['id']) => void;
+    currentPage: CurrentPage;
+    setCurrentPage: (currentPage: CurrentPage) => void;
 };
 
 export const LayoutContext = createContext<LayoutContextData>({
