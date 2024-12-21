@@ -27,5 +27,10 @@ func (p *processorHook) Provides(b byte) bool {
 }
 
 func (p *processorHook) OnPublished(cl *mqtt.Client, pk packets.Packet) {
-	p.processor.Process(pk.TopicName, string(cl.Properties.Username), string(pk.Payload))
+	p.processor.Process(processor.MQTTMessage{
+		Server:  processor.InternalBroker,
+		Topic:   pk.TopicName,
+		Payload: string(pk.Payload),
+		User:    string(cl.Properties.Username),
+	})
 }

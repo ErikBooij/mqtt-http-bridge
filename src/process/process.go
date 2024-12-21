@@ -56,7 +56,9 @@ func Start(ctx context.Context, cfg *config.Config, appStartErr chan error) {
 		}
 	}
 
-	proc := processor.New(service, setUpPublisher(ctx, 10, logger), logger)
+	mqttMessageChan := make(chan processor.MQTTMessage, 100)
+
+	proc := processor.New(service, setUpPublisher(ctx, 10, logger), mqttMessageChan, logger)
 
 	// Create signals channel to run broker until interrupted
 	sigs := make(chan os.Signal, 1)
@@ -94,7 +96,7 @@ func Start(ctx context.Context, cfg *config.Config, appStartErr chan error) {
 		return
 	}
 
-	httpServer := setUpServer(service, cfg)
+	httpServer := setUpServer(service, mqttMessageChan, cfg)
 
 	go func() {
 		err := broker.Serve()
@@ -169,8 +171,8 @@ func setUpPublisher(ctx context.Context, parallel int, logger *log.Logger) publi
 	}, logger)
 }
 
-func setUpServer(service subscription.Service, cfg *config.Config) server.HTTPServer {
-	return server.New(service, cfg)
+func setUpServer(service subscription.Service, mqttMessageChan <-chan processor.MQTTMessage, cfg *config.Config) server.HTTPServer {
+	return server.New(service, mqttMessageChan, cfg)
 }
 
 func setUpStore(cfg *config.Config) (datastore.Store, error) {

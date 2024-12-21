@@ -14,15 +14,26 @@ import (
 	"text/template"
 )
 
+const InternalBroker = "internal"
+
 type Processor interface {
-	Process(topic string, user string, payload string)
+	Process(message MQTTMessage)
 }
 
-func New(store subscription.Service, publisher publisher.Publisher, logger *log.Logger) Processor {
+type MQTTMessage struct {
+	Server  string
+	Topic   string
+	Payload string
+	// Internal Server Only
+	User string
+}
+
+func New(store subscription.Service, publisher publisher.Publisher, mqttMessageChan chan<- MQTTMessage, logger *log.Logger) Processor {
 	return &processor{
-		logger:    logger,
-		publisher: publisher,
-		service:   store,
+		logger:          logger,
+		mqttMessageChan: mqttMessageChan,
+		publisher:       publisher,
+		service:         store,
 
 		expressionCache: make(map[string]*jsonata.Expr),
 		templateCache:   make(map[string]*template.Template),
@@ -30,9 +41,10 @@ func New(store subscription.Service, publisher publisher.Publisher, logger *log.
 }
 
 type processor struct {
-	logger    *log.Logger
-	publisher publisher.Publisher
-	service   subscription.Service
+	logger          *log.Logger
+	mqttMessageChan chan<- MQTTMessage
+	publisher       publisher.Publisher
+	service         subscription.Service
 
 	expressionCache   map[string]*jsonata.Expr
 	expressionCacheMu sync.RWMutex
@@ -41,12 +53,14 @@ type processor struct {
 	templateCacheMu sync.RWMutex
 }
 
-func (p *processor) Process(topic string, user string, payload string) {
-	subs, err := p.service.GetSubscriptionsForTopic(topic)
+func (p *processor) Process(message MQTTMessage) {
+	p.mqttMessageChan <- message
+
+	subs, err := p.service.GetSubscriptionsForTopic(message.Topic)
 
 	switch {
 	case err != nil:
-		p.logger.Printf("Error getting subscriptions for topic %s: %s\n", topic, err)
+		p.logger.Printf("Error getting subscriptions for topic %s: %s\n", message.Topic, err)
 		return
 	}
 
@@ -60,12 +74,12 @@ func (p *processor) Process(topic string, user string, payload string) {
 		go func() {
 			parameters := map[string]any{
 				"meta": map[string]any{
-					"topic":   topic,
-					"client":  user,
-					"payload": payload,
+					"topic":   message.Topic,
+					"client":  message.User,
+					"payload": message.Payload,
 				},
 				"global":  globalParams,
-				"extract": p.extractParametersFromMessage(sub, payload),
+				"extract": p.extractParametersFromMessage(sub, message.Payload),
 			}
 
 			sub, err = p.service.ApplyPlaceholdersOnSubscription(sub, parameters)
@@ -80,7 +94,7 @@ func (p *processor) Process(topic string, user string, payload string) {
 				return
 			}
 
-			requestBody := p.renderTemplate(sub, parameters, payload)
+			requestBody := p.renderTemplate(sub, parameters, message.Payload)
 
 			p.publisher.Publish(requestBody, sub)
 		}()
