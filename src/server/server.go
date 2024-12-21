@@ -5,6 +5,7 @@ import (
 	"github.com/labstack/gommon/log"
 	"io"
 	"mqtt-http-bridge/src/config"
+	"mqtt-http-bridge/src/processor"
 	"mqtt-http-bridge/src/subscription"
 	"net/http"
 )
@@ -13,7 +14,7 @@ type HTTPServer interface {
 	Start(address string) error
 }
 
-func New(service subscription.Service, cfg *config.Config) HTTPServer {
+func New(service subscription.Service, mqttMessageChan <-chan processor.MQTTMessage, cfg *config.Config) HTTPServer {
 	server := echo.New()
 	server.Binder = newBinder()
 	server.Validator = newValidator()
@@ -42,6 +43,11 @@ func New(service subscription.Service, cfg *config.Config) HTTPServer {
 	api.DELETE("/global-parameters/:parameter", deleteGlobalParameter(service))
 	api.GET("/global-parameters", listGlobalParameters(service))
 	api.POST("/global-parameters", setGlobalParameter(service))
+
+	mqttSocketServer := newMqttSocketServer(mqttMessageChan)
+	mqttSocketServer.run()
+
+	api.GET("/mqtt-socket", mqttSocketServer.mqttLog)
 
 	api.Any("/*", apiError(http.StatusNotFound, "Not Found"))
 
