@@ -3,15 +3,9 @@ import { LayoutContext } from '../components/Layout';
 import { Subscription } from '../../api/subscriptions';
 import { Link } from 'react-router-dom';
 import { PageTitle } from '../components/PageTitle';
-import { useDeleteSubscription, useFetchSubscription, useListSubscriptions } from '../../rq/subscription';
+import { useDeleteSubscription, useListSubscriptions } from '../../rq/subscription';
 
 export const Subscriptions = () => {
-    const { setCurrentPage } = useContext(LayoutContext);
-
-    useEffect(() => {
-        setCurrentPage('subscriptions');
-    })
-
     const { isPending, error, data: subscriptions } = useListSubscriptions();
 
     if (isPending) {
@@ -28,7 +22,12 @@ export const Subscriptions = () => {
 
     return (
         <>
-            <PageTitle action={{ title: 'New Subscription', href: '/new-subscription' }}>Subscriptions</PageTitle>
+            <PageTitle
+                action={{ title: 'New Subscription', href: '/new-subscription' }}
+                currentPage="subscriptions"
+            >
+                Subscriptions
+            </PageTitle>
             <div className="mt-8">
                 <ul className="grid lg:grid-cols-2 gap-x-8">
                     { subscriptions.map(sub => (

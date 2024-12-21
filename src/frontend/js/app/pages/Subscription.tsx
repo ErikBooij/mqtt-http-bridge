@@ -1,25 +1,24 @@
-import React, { PropsWithChildren, useContext, useEffect, useState } from 'react'
-import { LayoutContext } from '../components/Layout';
+import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router';
-import { useCreateSubscription, useFetchSubscription, useUpdateSubscription } from '../../rq/subscription';
+import {
+    useCreateSubscription,
+    useDeleteSubscription,
+    useFetchSubscription,
+    useUpdateSubscription
+} from '../../rq/subscription';
 import { PageTitle } from '../components/PageTitle';
 import { Select, TextArea, TextField, Validator } from '../components/forms/input';
 import { SubscriptionWithoutID as APISubscription } from '../../api/subscriptions';
 import { Validation, validator } from '../components/forms/validation';
 import { useListGlobalParameters } from '../../rq/parameter';
-import { CopyIcon, copyIcon } from '../../shared/icons';
+import { CopyIcon } from '../../shared/icons';
+import { ExpandingKeyValue, FieldRow, Section, SectionHeading } from '../components/FormSections';
 
 type Props = {
     mode: 'new' | 'copy' | 'edit';
 }
 
 export const Subscription = ({ mode }: Props) => {
-    const { setCurrentPage } = useContext(LayoutContext);
-
-    useEffect(() => {
-        setCurrentPage('subscriptions');
-    })
-
     const [ name, setName ] = useState('');
     const [ topic, setTopic ] = useState('');
     const [ extract, setExtract ] = useState<Record<string, string>>({});
@@ -66,6 +65,7 @@ export const Subscription = ({ mode }: Props) => {
 
     const createSubscription = useCreateSubscription({ onSuccess: afterSave });
     const updateSubscription = useUpdateSubscription({ onSuccess: afterSave });
+    const deleteSubscription = useDeleteSubscription();
 
     const { id } = useParams();
 
@@ -121,11 +121,22 @@ export const Subscription = ({ mode }: Props) => {
 
     return (
         <div>
-            <PageTitle action={ {
-                title: 'Save',
-                onClick: saveSubscription,
-                disabled: Object.values(validations).some(v => !v)
-            } }>Subscription</PageTitle>
+            <PageTitle
+                action={ {
+                    title: 'Save',
+                    onClick: saveSubscription,
+                    disabled: Object.values(validations).some(v => !v)
+                } }
+                secondaryAction={ mode === 'edit' ? {
+                    title: 'Delete',
+                    onClick: () => {
+                        if (confirm('Are you sure you want to delete this subscription?')) {
+                            deleteSubscription.mutate({ id: id! }, { onSuccess: afterSave });
+                        }
+                    }
+                } : undefined}
+                currentPage="subscriptions"
+            >Subscription</PageTitle>
             <div className="flex flex-col-reverse sm:grid sm:grid-cols-12 sm:gap-x-8">
                 <div className="sm:col-span-8">
                     <form
@@ -133,7 +144,10 @@ export const Subscription = ({ mode }: Props) => {
                         <Section>
                             <FieldRow label="Name">
                                 <TextField value={ name } onChange={ setName }
-                                           validator={ registerValidation('name', { required: true, regex: /^[0-9A-Za-z]([0-9A-Za-z.\-_|\\/ ]*[0-9A-Za-z])?$/ }) }/>
+                                           validator={ registerValidation('name', {
+                                               required: true,
+                                               regex: /^[0-9A-Za-z]([0-9A-Za-z.\-_|\\/ ]*[0-9A-Za-z])?$/
+                                           }) }/>
                             </FieldRow>
                         </Section>
                         <Section>
@@ -142,7 +156,10 @@ export const Subscription = ({ mode }: Props) => {
                             </SectionHeading>
                             <FieldRow label="Topic">
                                 <TextField value={ topic } onChange={ setTopic }
-                                           validator={ registerValidation('topic', { required: true, regex: /^(\/?(([^#+\\/]*|\+)(\/([^#+\\/]*|\+))*)?\/?#?)$/ }) }
+                                           validator={ registerValidation('topic', {
+                                               required: true,
+                                               regex: /^(\/?(([^#+\\/]*|\+)(\/([^#+\\/]*|\+))*)?\/?#?)$/
+                                           }) }
                                 />
                             </FieldRow>
                             <FieldRow label="Extract">
@@ -200,15 +217,15 @@ export const Subscription = ({ mode }: Props) => {
                                     <div key={ section } className="mt-4">
                                         <ul className="overflow-hidden rounded-md bg-white px-4 py-4 shadow">
                                             {
-                                                keys.sort(([ keyA ], [ keyB ]) => keyA.localeCompare(keyB) ).map(key => (
+                                                keys.sort(([ keyA ], [ keyB ]) => keyA.localeCompare(keyB)).map(key => (
                                                     <li key={ key }
                                                         className="whitespace-nowrap flex items-center gap-x-2 py-1 cursor-pointer hover:bg-gray-100 -mx-2 px-2 rounded-md"
                                                         onClick={ () => navigator.clipboard.writeText(`{{ .${ section }.${ key } }}`) }
                                                     >
-                                                        { <CopyIcon /> }
-                                                    <span className="font-mono text-sm">
+                                                        { <CopyIcon/> }
+                                                        <span className="font-mono text-sm">
                                                         { section }
-                                                        .
+                                                            .
                                                         <span className="font-bold">{ key }
                                                     </span>
                                             </span></li>
@@ -223,90 +240,4 @@ export const Subscription = ({ mode }: Props) => {
             </div>
         </div>
     );
-}
-
-const ExpandingKeyValue = ({ onChange, value, keyValidation, valueValidation }: {
-    onChange?: (e: Record<string, string>) => void,
-    value: Record<string, string> | undefined,
-    keyValidation?: (i: number) => Validator,
-    valueValidation?: (i: number) => Validator,
-}) => {
-    const [ rows, setRows ] = useState<[ string, string ][]>([ ...Object.entries(value || {}), [ '', '' ] ]);
-
-    const onChangeKey = (i: number) => (e: string) => {
-        setRows(r => {
-            const newValue = [ ...r ];
-
-            newValue[ i ] = [ e, newValue[ i ][ 1 ] || '' ];
-
-            if (i === newValue.length - 1) {
-                newValue.push([ '', '' ]);
-            }
-
-            return newValue;
-        })
-    }
-
-    const onChangeValue = (i: number) => (e: string) => {
-        setRows(r => {
-            const newValue = [ ...r ];
-
-            newValue[ i ] = [ newValue[ i ][ 0 ] || '', e ];
-
-            if (i === newValue.length - 1) {
-                newValue.push([ '', '' ]);
-            }
-
-            return newValue;
-        })
-    }
-
-    useEffect(() => {
-        onChange?.(Object.fromEntries(rows.filter(([ key, value ]) => key && value)));
-    }, [ rows ]);
-
-    return <div className="flex gap-y-2 flex-col">
-        { rows.map(([ key, value ], i) => (
-            <div className="w-full block" key={ i }>
-                <div className="mt-2 sm:col-span-5 sm:mt-0 flex gap-x-4 js-input">
-                    <div className="w-1/4 flex-grow flex-shrink">
-                        <TextField value={ key } onChange={ onChangeKey(i) } validator={ keyValidation?.(i) }/>
-                    </div>
-                    <div className="w-3/4 flex-grow flex-shrink">
-                        <TextField value={ value } onChange={ onChangeValue(i) } validator={ valueValidation?.(i) }/>
-                    </div>
-                </div>
-            </div>
-        )) }
-    </div>
-}
-
-const FieldRow = ({ label, children }: PropsWithChildren<{ label: string }>) => {
-    return (
-        <div className="sm:grid sm:grid-cols-6 sm:items-start sm:gap-4 sm:py-3">
-            <label htmlFor="first-name"
-                   className="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5 sm:mt-0 mt-6"
-            >
-                { label }
-            </label>
-            <div className="mt-2 sm:col-span-5 sm:mt-0">
-                { children }
-            </div>
-        </div>
-    )
-}
-
-const Section = ({ children }: PropsWithChildren) => {
-    return <div className="pt-8">
-        { children }
-    </div>
-}
-
-const SectionHeading = ({ children, label }: PropsWithChildren<{ label: string }>) => {
-    return <div className="-ml-2 -mt-2 mb-8">
-        <h3 className="ml-2 mt-2 text-base font-semibold leading-6 text-gray-900">{ label }</h3>
-        <p className="ml-2 mt-1 truncate text-sm text-gray-500">
-            { children }
-        </p>
-    </div>
 }
