@@ -11,7 +11,7 @@ import { Select, TextArea, TextField, Validator } from '../components/forms/inpu
 import { SubscriptionWithoutID as APISubscription } from '../../api/subscriptions';
 import { Validation, validator } from '../components/forms/validation';
 import { useListGlobalParameters } from '../../rq/parameter';
-import { CopyIcon } from '../../shared/icons';
+import { CopyIcon } from '../components/Icons';
 import { ExpandingKeyValue, FieldRow, Section, SectionHeading } from '../components/FormSections';
 
 type Props = {

@@ -12,13 +12,6 @@ func Assets() fs.FS {
 	return SubOrPanic(assets, "dist")
 }
 
-//go:embed templates
-var templates embed.FS
-
-func Templates() fs.FS {
-	return SubOrPanic(templates, "templates")
-}
-
 func SubOrPanic(f embed.FS, name string) fs.FS {
 	fs, err := fs.Sub(f, name)
 
