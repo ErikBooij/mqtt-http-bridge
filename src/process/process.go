@@ -3,6 +3,7 @@ package process
 import (
 	"context"
 	"fmt"
+	mqtt2 "github.com/eclipse/paho.mqtt.golang"
 	mqtt "github.com/mochi-mqtt/server/v2"
 	"github.com/mochi-mqtt/server/v2/listeners"
 	"io"
@@ -96,6 +97,8 @@ func Start(ctx context.Context, cfg *config.Config, appStartErr chan error) {
 		return
 	}
 
+	setUpExternalClients(cfg, proc)
+
 	httpServer := setUpServer(service, mqttMessageChan, cfg)
 
 	go func() {
@@ -163,6 +166,45 @@ func logStartWithConfig(cfg *config.Config, logger *log.Logger) {
 	logger.Printf("Starting MQTT broker on %s:%d %s\n", cfg.Broker.Address, cfg.Broker.Port, a)
 	logger.Printf("Starting HTTP server on %s:%d\n", cfg.Server.Address, cfg.Server.Port)
 	logger.Printf("Using %s storage driver\n", cfg.Storage.Driver)
+}
+
+func setUpExternalClients(cfg *config.Config, proc processor.Processor) {
+	for name, broker := range cfg.ExternalBrokers {
+		go func(name string, broker config.ExternalBrokerConfig) {
+			opts := mqtt2.NewClientOptions().
+				AddBroker(broker.Host).
+				SetClientID(broker.ClientID).
+				SetAutoReconnect(true).
+				SetOrderMatters(true).
+				SetOnConnectHandler(func(client mqtt2.Client) {
+					log.Printf("Connected to %s\n", name)
+				})
+
+			if broker.Username != "" {
+				opts.SetUsername(broker.Username)
+			}
+
+			if broker.Password != "" {
+				opts.SetPassword(broker.Password)
+			}
+
+			client := mqtt2.NewClient(opts)
+
+			token := client.Connect()
+
+			token.Wait()
+
+			for _, topic := range broker.Topics {
+				client.Subscribe(topic, 0, func(client mqtt2.Client, message mqtt2.Message) {
+					proc.Process(processor.MQTTMessage{
+						Server:  name,
+						Topic:   message.Topic(),
+						Payload: string(message.Payload()),
+					})
+				})
+			}
+		}(name, broker)
+	}
 }
 
 func setUpPublisher(ctx context.Context, parallel int, logger *log.Logger) publisher.Publisher {
