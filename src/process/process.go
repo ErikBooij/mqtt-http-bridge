@@ -170,6 +170,11 @@ func logStartWithConfig(cfg *config.Config, logger *log.Logger) {
 
 func setUpExternalClients(cfg *config.Config, proc processor.Processor) {
 	for name, broker := range cfg.ExternalBrokers {
+		if len(broker.Topics) == 0 {
+			// No point in subscribing to nothing.
+			continue
+		}
+
 		go func(name string, broker config.ExternalBrokerConfig) {
 			opts := mqtt2.NewClientOptions().
 				AddBroker(broker.Host).
