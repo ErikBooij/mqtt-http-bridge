@@ -18,6 +18,9 @@ broker:
 external-brokers:
   smarthome-mqtt:
     name: 'Smarthome MQTT'
+    client-id: 'mqtt-http-bridge'
     host: '192.168.2.2:1883'
     username: 'test'
     password: 'test'
+    topics:
+      - 'shellies/#'
