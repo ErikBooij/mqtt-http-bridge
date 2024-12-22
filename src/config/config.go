@@ -6,6 +6,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/yaml.v3"
+	"mqtt-http-bridge/src/processor"
 	"os"
 	"slices"
 	"strings"
@@ -17,7 +18,7 @@ type Config struct {
 	PrepareData bool   `envconfig:"PREPARE_DATA" default:"false"`
 
 	Broker          BrokerConfig                    `yaml:"broker"`
-	ExternalBrokers map[string]ExternalBrokerConfig `yaml:"brokers"`
+	ExternalBrokers map[string]ExternalBrokerConfig `yaml:"external-brokers"`
 	Server          ServerConfig                    `yaml:"server"`
 	Storage         StorageConfig                   `yaml:"storage"`
 
@@ -38,10 +39,12 @@ type BrokerUser struct {
 }
 
 type ExternalBrokerConfig struct {
-	Name     string `yaml:"name"`
-	Host     string `yaml:"host"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
+	Name     string   `yaml:"name"`
+	ClientID string   `yaml:"client-id"`
+	Host     string   `yaml:"host"`
+	Username string   `yaml:"username"`
+	Password string   `yaml:"password"`
+	Topics   []string `yaml:"topics"`
 }
 
 type ServerConfig struct {
@@ -112,6 +115,10 @@ func Load() (*Config, error) {
 
 	if !slices.Contains(supportedStorageDrivers, cfg.Storage.Driver) {
 		return nil, fmt.Errorf("invalid storage driver: %s (should be one of %s)", cfg.Storage.Driver, strings.Join(supportedStorageDrivers, "/"))
+	}
+
+	if _, ok := cfg.ExternalBrokers[processor.InternalBroker]; ok {
+		return nil, fmt.Errorf("the name %s cannot be used for an external broker", processor.InternalBroker)
 	}
 
 	return &cfg, nil
