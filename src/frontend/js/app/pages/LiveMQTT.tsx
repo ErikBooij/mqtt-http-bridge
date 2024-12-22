@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { PageTitle } from '../components/PageTitle';
 import { useWebSocket } from '../adapters/use-web-socket';
 import { ReadyState } from 'react-use-websocket';
+import { TextField } from '../components/forms/input';
+import { useLocalStorage } from 'usehooks-ts';
 
 type SocketMessage = {
     payload: string;
@@ -12,9 +14,8 @@ type SocketMessage = {
     timestamp: string;
 }
 
-const maxMessages = 1000;
-
 export const LiveMQTT = () => {
+    const [ maxMessages, setMaxMessages ] = useLocalStorage('maxMessages', 100);
     const [ socketMessages, setSocketMessages ] = useState<Record<string, SocketMessage>>({});
 
     const {
@@ -28,19 +29,24 @@ export const LiveMQTT = () => {
     );
 
     useEffect(() => {
-        if (lastJsonMessage !== null) {
-            setSocketMessages((prev) => ( {
+        if (lastJsonMessage === null) {
+            return
+        }
+
+        setSocketMessages((prev) => {
+            const newMessages = {
                 ...prev,
                 [ lastJsonMessage.sequence ]: lastJsonMessage
-            } ));
+            };
 
-            if (Object.keys(socketMessages).length > maxMessages) {
-                const newSocketMessages = { ...socketMessages };
-                delete newSocketMessages[ Object.keys(socketMessages)[ 0 ] ];
-                setSocketMessages(newSocketMessages);
+            if (Object.keys(newMessages).length <= maxMessages) {
+                return newMessages;
             }
-        }
-    }, [ lastJsonMessage ]);
+            const newSocketMessages = { ...newMessages };
+
+            return Object.fromEntries(Object.entries(newSocketMessages).splice(-maxMessages));
+        });
+    }, [ lastJsonMessage, maxMessages ]);
 
     const dateTimeFormatter = new Intl.DateTimeFormat('en-US', {
         minute: 'numeric',
@@ -54,6 +60,15 @@ export const LiveMQTT = () => {
     return (
         <div>
             <PageTitle currentPage="live-mqtt">Live MQTT</PageTitle>
+            <div className="py-8 grid grid-cols-12">
+                <div className="col-span-12 sm:col-span-3">
+                    <label className="font-medium text-slate-700 text-sm">
+                        Maximum number of messages to display:
+                    </label>
+                    <TextField type="number" value={ String(maxMessages) }
+                               onChange={ (value: string) => setMaxMessages(parseInt(value)) }/>
+                </div>
+            </div>
             { readyState !== ReadyState.OPEN && <div>Connection status: { readyState }...</div> }
             { Object.values(socketMessages).length > 0 && (
                 <ul role="list" className="divide-y divide-slate-300 flex-col-reverse flex bg-white">

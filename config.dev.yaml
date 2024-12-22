@@ -20,7 +20,7 @@ external-brokers:
     name: 'Smarthome MQTT'
     client-id: 'mqtt-http-bridge'
     host: '192.168.2.2:1883'
-    username: 'zigbee-mqtt'
-    password: 'wU44yLTNZiQ9'
+    username: 'test'
+    password: 'test'
     topics:
       - 'shellies/#'
