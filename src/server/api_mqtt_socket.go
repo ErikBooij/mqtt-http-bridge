@@ -7,8 +7,8 @@ import (
 	"mqtt-http-bridge/src/processor"
 	"net/http"
 	"slices"
-	"strconv"
 	"sync"
+	"time"
 )
 
 const defaultHistorySize = 50
@@ -24,8 +24,9 @@ type mqttSocketServer struct {
 }
 
 type historyEntry struct {
-	message  processor.MQTTMessage
-	sequence int
+	message   processor.MQTTMessage
+	sequence  int
+	timestamp time.Time
 }
 
 type messageChan <-chan processor.MQTTMessage
@@ -81,15 +82,7 @@ func (s *mqttSocketServer) mqttLog(c echo.Context) error {
 		return ErrorResponse(c, http.StatusInternalServerError, err.Error())
 	}
 
-	lastSeenSequence := 0
-
-	if lss := c.QueryParam("last_seen_sequence"); lss != "" {
-		if l, err := strconv.Atoi(lss); err == nil {
-			lastSeenSequence = l
-		}
-	}
-
-	s.publishHistory(conn, lastSeenSequence)
+	s.publishHistory(conn, 0)
 
 	s.mu.Lock()
 	s.conns[conn] = struct{}{}
@@ -112,8 +105,9 @@ func (s *mqttSocketServer) addMessageToHistory(m processor.MQTTMessage) historyE
 	s.sequence++
 
 	entry := historyEntry{
-		message:  m,
-		sequence: s.sequence,
+		message:   m,
+		sequence:  s.sequence,
+		timestamp: time.Now(),
 	}
 
 	s.history[m.Server] = append(s.history[m.Server], entry)
@@ -127,19 +121,21 @@ func (s *mqttSocketServer) addMessageToHistory(m processor.MQTTMessage) historyE
 
 func (s *mqttSocketServer) historyEntryToSocketMessage(e historyEntry) []byte {
 	type socketMessage struct {
-		Server   string `json:"server"`
-		Topic    string `json:"topic"`
-		Payload  string `json:"payload"`
-		User     string `json:"user"`
-		Sequence int    `json:"sequence"`
+		Server    string `json:"server"`
+		Topic     string `json:"topic"`
+		Payload   string `json:"payload"`
+		User      string `json:"user"`
+		Sequence  int    `json:"sequence"`
+		Timestamp string `json:"timestamp"`
 	}
 
 	b, err := json.Marshal(socketMessage{
-		Server:   e.message.Server,
-		Topic:    e.message.Topic,
-		Payload:  e.message.Payload,
-		User:     e.message.User,
-		Sequence: e.sequence,
+		Server:    e.message.Server,
+		Topic:     e.message.Topic,
+		Payload:   e.message.Payload,
+		User:      e.message.User,
+		Sequence:  e.sequence,
+		Timestamp: e.timestamp.Format(time.RFC3339),
 	})
 
 	if err != nil {

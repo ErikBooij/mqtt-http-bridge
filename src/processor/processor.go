@@ -14,7 +14,7 @@ import (
 	"text/template"
 )
 
-const InternalBroker = "internal"
+const InternalBroker = "---internal---"
 
 type Processor interface {
 	Process(message MQTTMessage)
