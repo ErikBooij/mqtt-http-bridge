@@ -17,7 +17,7 @@ RUN rm -rf src/frontend/dist/*
 RUN make build-css
 RUN make build-js
 
-FROM golang:1.23-alpine AS be-builder
+FROM golang:1.24-alpine AS be-builder
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
