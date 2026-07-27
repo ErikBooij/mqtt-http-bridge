@@ -5,7 +5,7 @@ go 1.23
 require (
 	github.com/BraspagDevelopers/mock-server-client v0.2.2
 	github.com/blues/jsonata-go v1.5.4
-	github.com/docker/go-connections v0.5.0
+	github.com/docker/go-connections v0.8.1
 	github.com/eclipse/paho.mqtt.golang v1.5.0
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/google/uuid v1.6.0
