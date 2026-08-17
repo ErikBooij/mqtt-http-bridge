@@ -15,7 +15,7 @@ require (
 	github.com/labstack/gommon v0.4.2
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mochi-mqtt/server/v2 v2.7.9
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.12.0
 	github.com/testcontainers/testcontainers-go v0.35.0
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
